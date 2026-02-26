@@ -1,6 +1,13 @@
 #include "GameWorld.hpp"
+#include "../objects/Card.hpp"
 
-GameWorld::GameWorld() {}
+GameWorld::GameWorld() {
+    Card* carta1 = new Card("Guerreiro", CardType::CREATURE, 3, 100, 200);
+    Card* carta2 = new Card("Bola de Fogo", CardType::SPELL, 5, 250, 200);
+
+    AddObject(carta1);
+    AddObject(carta2);
+}
 
 GameWorld::~GameWorld() {
     for (auto obj : objects) {
