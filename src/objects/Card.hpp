@@ -8,11 +8,13 @@ class Card : public DynamicObject {
     private:
         std::string name;
         int manaCost;
-        CardType type;
+        std::string description;
         Rarity rarity;
         std::vector<Ability> abilities;
+        Rarity rarity;
+        std::string imagePath;
     public:
-        Card(std::string name, CardType type, int manaCost, int x, int y);
+        Card(std::string name, int manaCost, Rarity rarity, std::string imagePath, int x, int y);
         virtual ~Card();
 
         virtual void Initialize() override;
