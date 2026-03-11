@@ -1,0 +1,48 @@
+{
+    "creatures": [
+        {
+            "id": 1,
+            "display_name": "Estressadinha",
+            "race": "PIXIE",
+            "rarity": "COMMON",
+            "description": "Sempre arrumando confusão com quem a chama de baixinha.",
+            "mana": 1,
+            "stages": [
+                {
+                    "level": 0,
+                    "attack": 2,
+                    "health": 2,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 1,
+                    "attack": 2,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 3,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        }
+    ],
+    "spells": [
+        {
+            "id": 1,
+            "display_name": "Fortalecer Vida",
+            "type": "FAST",
+            "rarity": "COMMON",
+            "mana": 2,
+            "description": "Aumenta a vida de uma criatura aliada em 2 pontos.",
+            "effects": [
+                "buff_vida_2"
+            ]
+        }
+    ]
+}
