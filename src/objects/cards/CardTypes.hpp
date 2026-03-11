@@ -24,6 +24,8 @@ inline std::string translateRace(Race r) {
         return "Dragão";
     case Race::DRYAD:
         return "Driade";
+    case Race::NONE:
+        return "Nenhuma";
     }
 }
 
