@@ -30,4 +30,9 @@ class Card : public DynamicObject {
         }
         return false;
     }
+
+    void SetPosition(int newX, int newY) {
+        x = newX;
+        y = newY;
+    }
 };
