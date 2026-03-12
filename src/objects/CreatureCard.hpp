@@ -16,6 +16,6 @@ class CreatureCard : public Card {
         virtual void Initialize() override;
         virtual void Update(float dt) override;
         virtual void Render(SDL_Renderer* renderer) override;
-        void GainXP() override;
-        void LevelUp() override;
+        void GainXP();
+        void LevelUp();
 };
