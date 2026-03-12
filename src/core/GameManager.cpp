@@ -1,4 +1,5 @@
 #include "GameManager.hpp"
+#include "../scenes/SceneBattle.hpp"
 #include <iostream>
 
 GameManager::GameManager() {
@@ -32,7 +33,8 @@ bool GameManager::Initialize(const char* title, int x, int y, int width, int hei
 
         isRunning = true;
         
-        currentWorld = new GameWorld();
+        currentWorld = new SceneBattle();
+        currentWorld->Initialize();
         return true;
     } else {
         isRunning = false;
@@ -58,30 +60,36 @@ void GameManager::Run() {
 }
 
 void GameManager::HandleEvents() {
-    SDL_Event event;
-    SDL_PollEvent(&event);
+SDL_Event event;
     
-    switch (event.type) {
-        case SDL_QUIT:
-            isRunning = false;
-            break;
-        case SDL_KEYDOWN:
-            if (event.key.keysym.sym == SDLK_F11) {
-                ToggleFullscreen();
-            }
-
-            if (event.key.keysym.sym == SDLK_ESCAPE) {
-                Uint32 flags = SDL_GetWindowFlags(window);
-
-                if (flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
-                    ToggleFullscreen(); 
-                } else {
-                    isRunning = false; 
+    while (SDL_PollEvent(&event)) {
+        
+        switch (event.type) {
+            case SDL_QUIT:
+                isRunning = false;
+                break;
+            case SDL_KEYDOWN:
+                if (event.key.keysym.sym == SDLK_F11) {
+                    ToggleFullscreen();
                 }
-            }
-            break;
-        default:
-            break;
+
+                if (event.key.keysym.sym == SDLK_ESCAPE) {
+                    Uint32 flags = SDL_GetWindowFlags(window);
+
+                    if (flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
+                        ToggleFullscreen(); 
+                    } else {
+                        isRunning = false; 
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+
+        if (currentWorld != nullptr) {
+            currentWorld->HandleInput(event);
+        }
     }
 }
 
