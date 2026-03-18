@@ -11,7 +11,6 @@ private:
 public:
     GameManager();
     ~GameManager();
-    static bool IsPointInsideRect(int x, int y, const SDL_Rect& rect);
     bool Initialize(const char* title, int x, int y, int width, int height, bool fullscreen);
     void Run();
     void HandleEvents();
