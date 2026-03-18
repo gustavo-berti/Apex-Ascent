@@ -35,4 +35,6 @@ class Card : public DynamicObject {
         x = newX;
         y = newY;
     }
+
+    const std::string& GetName() const { return name; }
 };

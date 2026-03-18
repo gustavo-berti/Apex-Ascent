@@ -19,4 +19,6 @@ class CreatureCard : public Card {
     virtual void Render(SDL_Renderer *renderer) override;
     void GainXP();
     void LevelUp();
+    int GetAttack() const { return attack; }
+    int GetHealth() const { return health; }
 };
