@@ -1,5 +1,4 @@
 #include "GameManager.hpp"
-#include "../scenes/SceneBattle.hpp"
 #include <iostream>
 
 GameManager::GameManager() {
@@ -33,8 +32,7 @@ bool GameManager::Initialize(const char* title, int x, int y, int width, int hei
 
         isRunning = true;
         
-        currentWorld = new SceneBattle();
-        currentWorld->Initialize();
+        currentWorld = new GameWorld();
         return true;
     } else {
         isRunning = false;
@@ -60,36 +58,30 @@ void GameManager::Run() {
 }
 
 void GameManager::HandleEvents() {
-SDL_Event event;
+    SDL_Event event;
+    SDL_PollEvent(&event);
     
-    while (SDL_PollEvent(&event)) {
-        
-        switch (event.type) {
-            case SDL_QUIT:
-                isRunning = false;
-                break;
-            case SDL_KEYDOWN:
-                if (event.key.keysym.sym == SDLK_F11) {
-                    ToggleFullscreen();
+    switch (event.type) {
+        case SDL_QUIT:
+            isRunning = false;
+            break;
+        case SDL_KEYDOWN:
+            if (event.key.keysym.sym == SDLK_F11) {
+                ToggleFullscreen();
+            }
+
+            if (event.key.keysym.sym == SDLK_ESCAPE) {
+                Uint32 flags = SDL_GetWindowFlags(window);
+
+                if (flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
+                    ToggleFullscreen(); 
+                } else {
+                    isRunning = false; 
                 }
-
-                if (event.key.keysym.sym == SDLK_ESCAPE) {
-                    Uint32 flags = SDL_GetWindowFlags(window);
-
-                    if (flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
-                        ToggleFullscreen(); 
-                    } else {
-                        isRunning = false; 
-                    }
-                }
-                break;
-            default:
-                break;
-        }
-
-        if (currentWorld != nullptr) {
-            currentWorld->HandleInput(event);
-        }
+            }
+            break;
+        default:
+            break;
     }
 }
 

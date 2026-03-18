@@ -16,6 +16,6 @@ class SpellCard : public Card {
         virtual void Initialize() override;
         virtual void Update(float dt) override;
         virtual void Render(SDL_Renderer* renderer) override;
-        void ActivateEffect();
+        void ActivateEffect() override;
         bool isFast() const;
 };
