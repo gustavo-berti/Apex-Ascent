@@ -4,7 +4,8 @@ LIBS = `pkg-config --libs sdl2 SDL2_image SDL2_ttf SDL2_mixer`
 TARGET = apex_ascent
 SOURCES = ./src/main.cpp ./src/core/GameManager.cpp \
           ./src/objects/Card.cpp ./src/objects/CreatureCard.cpp ./src/objects/SpellCard.cpp \
-          ./libs/my-lib/src/memory-pool.cpp ./src/logic/CardDatabase.cpp ./src/scenes/SceneBattle.cpp
+		  ./libs/my-lib/src/memory-pool.cpp ./src/logic/CardDatabase.cpp ./src/logic/CardFactory.cpp \
+		  ./src/scenes/SceneBattle.cpp
 
 all:
 	$(CXX) $(CXXFLAGS) $(SOURCES) -o $(TARGET) $(LIBS)
