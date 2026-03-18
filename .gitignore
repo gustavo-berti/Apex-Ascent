@@ -1,5 +1,6 @@
 /bin
 /build
 /.vscode
+assets/images/**.*
 
 apex_ascent
