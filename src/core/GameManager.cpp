@@ -13,6 +13,11 @@ GameManager::~GameManager() {
     Clean();
 }
 
+bool GameManager::IsPointInsideRect(int x, int y, const SDL_Rect& rect) {
+    return x >= rect.x && x <= rect.x + rect.w &&
+           y >= rect.y && y <= rect.y + rect.h;
+}
+
 bool GameManager::Initialize(const char* title, int x, int y, int width, int height, bool fullscreen) {
     int flags = 0;
     if (fullscreen) {
