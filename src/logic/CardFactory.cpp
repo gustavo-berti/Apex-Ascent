@@ -1,5 +1,5 @@
 #include "CardFactory.hpp"
-#include "../objects/CreatureCard.hpp"
+#include "../objects/cards/CreatureCard.hpp"
 #include <iostream>
 
 CreatureCard* CardFactory::CreateCreatureCard(const CardDatabase& database, int creatureId,

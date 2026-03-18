@@ -1,7 +1,7 @@
 #pragma once
 #include "../core/GameWorld.hpp"
 #include "../logic/CardDatabase.hpp"
-#include "../objects/Card.hpp"
+#include "../objects/cards/Card.hpp"
 
 class CreatureCard;
 

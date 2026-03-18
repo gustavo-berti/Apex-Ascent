@@ -1,6 +1,6 @@
 #include "SceneBattle.hpp"
-#include "../objects/CreatureCard.hpp"
-#include "../objects/SpellCard.hpp"
+#include "../objects/cards/CreatureCard.hpp"
+#include "../objects/cards/SpellCard.hpp"
 #include "../core/GameManager.hpp"
 #include "../logic/CardFactory.hpp"
 #include <iostream>

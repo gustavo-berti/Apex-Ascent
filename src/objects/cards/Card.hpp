@@ -1,6 +1,6 @@
 #pragma once
-#include "./base/DynamicObject.hpp"
-#include "./cards/CardTypes.hpp"
+#include "../base/DynamicObject.hpp"
+#include "./CardTypes.hpp"
 #include <string>
 #include <vector>
 
