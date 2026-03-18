@@ -1,6 +1,8 @@
 #include "SceneBattle.hpp"
 #include "../objects/CreatureCard.hpp"
 #include "../objects/SpellCard.hpp"
+#include "../core/GameManager.hpp"
+#include "../logic/CardFactory.hpp"
 #include <iostream>
 
 SceneBattle::SceneBattle() {
@@ -12,6 +14,10 @@ SceneBattle::~SceneBattle() {}
 void SceneBattle::Initialize() {
     std::cout << "A inicializar a Cena de Batalha..." << std::endl;
 
+    if (!cardDatabase.LoadFromJson("assets/data/cards.json")) {
+        std::cerr << "Falha ao carregar a base de dados de cartas." << std::endl;
+    }
+
     enemyPreparationZone  = { 280, 20,  720, 150 };
     enemyBattleZone       = { 280, 180, 720, 150 };
     playerBattleZone      = { 280, 390, 720, 150 };
@@ -20,22 +26,32 @@ void SceneBattle::Initialize() {
     btnBuyCard = { 1050, 600, 150, 50 };
 }
 
-void SceneBattle::HandleInput(SDL_Event& event) {
-    if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
-        int mouseX = event.button.x;
-        int mouseY = event.button.y;
-
-        if (mouseX >= btnBuyCard.x && mouseX <= btnBuyCard.x + btnBuyCard.w &&
-            mouseY >= btnBuyCard.y && mouseY <= btnBuyCard.y + btnBuyCard.h) {
-            
-            std::cout << "Botão clicado! Gerando carta..." << std::endl;
-            CreatureCard* novaCarta = new CreatureCard("Guerreiro Teste", 2, Rarity::COMMON, "", 3, 5, "Humano", 0, 0, 0);
-
-            AddCardToPlayerPreparation(novaCarta);
-        }
+bool SceneBattle::IsBuyCardButtonClick(const SDL_Event& event) const {
+    if (event.type != SDL_MOUSEBUTTONDOWN || event.button.button != SDL_BUTTON_LEFT) {
+        return false;
     }
+
+    return GameManager::IsPointInsideRect(event.button.x, event.button.y, btnBuyCard);
 }
 
+void SceneBattle::HandleBuyCardAction() {
+    std::cout << "Botao clicado! Gerando carta..." << std::endl;
+
+    CreatureCard* card = CardFactory::CreateCreatureCard(cardDatabase, 1);
+    if (!card) {
+        std::cout << "Falha ao criar carta: ID invalido ou sem estagios." << std::endl;
+        return;
+    }
+
+    card->Initialize();
+    AddCardToPlayerPreparation(card);
+}
+
+void SceneBattle::HandleInput(SDL_Event& event) {
+    if (IsBuyCardButtonClick(event)) {
+        HandleBuyCardAction();
+    }
+}
 void SceneBattle::Update(float dt) {
     for (auto obj : objects) {
         obj->Update(dt);
@@ -79,11 +95,20 @@ void SceneBattle::OrganizeZone(std::vector<Card*>& zoneCards, SDL_Rect zoneRect)
 void SceneBattle::AddCardToPlayerPreparation(Card* card) {
     if (playerPreparationCards.size() < 6) {
         playerPreparationCards.push_back(card);
-
-        objects.push_back(card); 
+        objects.push_back(card);
 
         OrganizeZone(playerPreparationCards, playerPreparationZone);
+
+        std::cout << card->GetName()
+                  << " adicionado ao campo de Preparacao do Jogador!" << std::endl;
+
+        if (auto* creature = dynamic_cast<CreatureCard*>(card)) {
+            std::cout << creature->GetAttack()
+                      << " de ATK e "
+                      << creature->GetHealth()
+                      << " de HP." << std::endl;
+        }
     } else {
-        std::cout << "Campo de Preparação está cheio! Limite de 6 cartas." << std::endl;
+        std::cout << "Campo de Preparacao esta cheio! Limite de 6 cartas." << std::endl;
     }
 }

@@ -1,6 +1,9 @@
 #pragma once
 #include "../core/GameWorld.hpp"
+#include "../logic/CardDatabase.hpp"
 #include "../objects/Card.hpp"
+
+class CreatureCard;
 
 class SceneBattle : public GameWorld {
 private:
@@ -12,8 +15,11 @@ private:
 
     std::vector<Card*> playerPreparationCards;
     std::vector<Card*> playerBattleCards;
+    CardDatabase cardDatabase;
     Card* draggedCard = nullptr;
 
+    bool IsBuyCardButtonClick(const SDL_Event& event) const;
+    void HandleBuyCardAction();
     void OrganizeZone(std::vector<Card*>& zoneCards, SDL_Rect zoneRect);
 
 public:
