@@ -38,8 +38,10 @@ bool GameManager::Initialize(const char* title, int x, int y, int width, int hei
 
         isRunning = true;
         
-        currentWorld = new SceneBattle();
-        currentWorld->Initialize();
+        SceneBattle* battleScene = new SceneBattle();
+        battleScene->Initialize();
+        battleScene->StartBattle(&player);
+        currentWorld = battleScene;
         return true;
     } else {
         isRunning = false;
