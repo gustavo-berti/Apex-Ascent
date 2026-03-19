@@ -2,8 +2,11 @@
 #include "../objects/cards/CreatureCard.hpp"
 #include "../objects/cards/SpellCard.hpp"
 #include "../core/GameManager.hpp"
+#include "../logic/Player.hpp"
 #include "../logic/CardFactory.hpp"
+#include <algorithm>
 #include <iostream>
+#include <random>
 
 SceneBattle::SceneBattle() {
     draggedCard = nullptr;
@@ -22,8 +25,82 @@ void SceneBattle::Initialize() {
     enemyBattleZone       = { 280, 180, 720, 150 };
     playerBattleZone      = { 280, 390, 720, 150 };
     playerPreparationZone = { 280, 550, 720, 150 };
+    playerHandZone = { 0, 570, 1280, 150 };
 
     btnBuyCard = { 1050, 600, 150, 50 };
+}
+
+bool SceneBattle::SetCurrentPlayerState(Player* playerState) {
+    if (!playerState) {
+        std::cout << "Estado do jogador invalido. Nao foi possivel iniciar a batalha." << std::endl;
+        return false;
+    }
+
+    currentState = playerState;
+    return true;
+}
+
+void SceneBattle::ResetBattleDeckState() {
+    drawPile.clear();
+    hand.clear();
+    discardPile.clear();
+}
+
+void SceneBattle::AddDeckCardToDrawPile(const std::string& cardId) {
+    int creatureId = 0;
+    try {
+        creatureId = std::stoi(cardId);
+    } catch (...) {
+        std::cout << "ID de carta invalido no deck: " << cardId << std::endl;
+        return;
+    }
+
+    CreatureCard* createdCard = CardFactory::CreateCreatureCard(cardDatabase, creatureId);
+    if (createdCard) {
+        createdCard->SetPosition(-200, -200);
+        drawPile.push_back(createdCard);
+        objects.push_back(createdCard);
+    }
+}
+
+void SceneBattle::BuildDrawPileFromMasterDeck() {
+    for (const std::string& cardId : currentState->masterDeck) {
+        AddDeckCardToDrawPile(cardId);
+    }
+}
+
+void SceneBattle::ShuffleDrawPile() {
+    std::random_device rd;
+    std::default_random_engine rng(rd());
+    std::shuffle(drawPile.begin(), drawPile.end(), rng);
+}
+
+void SceneBattle::StartBattle(Player* playerState) {
+    if (!SetCurrentPlayerState(playerState)) {
+        return;
+    }
+
+    std::cout << "Montando o Battle Deck a partir do Master Deck...\n";
+
+    ResetBattleDeckState();
+    BuildDrawPileFromMasterDeck();
+    ShuffleDrawPile();
+
+    DrawCards(5);
+}
+
+void SceneBattle::DrawCards(int amount) {
+    for (int i = 0; i < amount; ++i) {
+        if (drawPile.empty()) {
+            std::cout << "Pilha de compra vazia! Num jogo real, você embaralharia o descarte aqui.\n";
+            break;
+        }
+
+        Card* drawnCard = drawPile.back();
+        drawPile.pop_back();
+        hand.push_back(drawnCard);
+    }
+    OrganizeZone(hand, playerHandZone);
 }
 
 bool SceneBattle::IsBuyCardButtonClick(const SDL_Event& event) const {
@@ -35,16 +112,8 @@ bool SceneBattle::IsBuyCardButtonClick(const SDL_Event& event) const {
 }
 
 void SceneBattle::HandleBuyCardAction() {
-    std::cout << "Botao clicado! Gerando carta..." << std::endl;
-
-    CreatureCard* card = CardFactory::CreateCreatureCard(cardDatabase, 1);
-    if (!card) {
-        std::cout << "Falha ao criar carta: ID invalido ou sem estagios." << std::endl;
-        return;
-    }
-
-    card->Initialize();
-    AddCardToPlayerPreparation(card);
+    std::cout << "Botao clicado! Puxando a proxima carta do jogador..." << std::endl;
+    DrawCards(1);
 }
 
 void SceneBattle::HandleInput(SDL_Event& event) {
@@ -59,8 +128,8 @@ void SceneBattle::Update(float dt) {
 }
 
 void SceneBattle::Render(SDL_Renderer* renderer) {
-    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-    
+
+    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);    
     SDL_RenderDrawRect(renderer, &enemyPreparationZone);
     SDL_RenderDrawRect(renderer, &enemyBattleZone);
     SDL_RenderDrawRect(renderer, &playerBattleZone);

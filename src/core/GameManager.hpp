@@ -1,10 +1,12 @@
 #pragma once
 #include <SDL2/SDL.h>
 #include "GameWorld.hpp"
+#include "../logic/Player.hpp"
 
 class GameManager {
 private:
     bool isRunning;
+    Player player;
     SDL_Window* window;
     SDL_Renderer* renderer;
     GameWorld* currentWorld;
