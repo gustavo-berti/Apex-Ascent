@@ -1,17 +1,19 @@
 #pragma once
+#include "../logic/CardDatabase.hpp"
 #include "./Card.hpp"
 
 class CreatureCard : public Card {
   private:
+    const CreatureData *dataRef;
+
     int attack;
     int health;
-    std::string effectDescription;
     int xpPoints;
     int stage = 1;
+    std::vector<Ability> abilities;
 
   public:
-    CreatureCard(std::string name, int manaCost, Rarity rarity, std::string imagePath, int attack,
-                 int health, std::string effectDescription, int xpPoints, int x, int y);
+    CreatureCard(const CreatureData *data, int x, int y);
     virtual ~CreatureCard();
 
     virtual void Initialize() override;
@@ -21,4 +23,13 @@ class CreatureCard : public Card {
     void LevelUp();
     int GetAttack() const { return attack; }
     int GetHealth() const { return health; }
+
+    bool hasAbility(Ability ability) const {
+        for (const auto &a : abilities) {
+            if (a == ability) {
+                return true;
+            }
+        }
+        return false;
+    }
 };

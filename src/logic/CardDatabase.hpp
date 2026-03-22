@@ -5,12 +5,16 @@
 #include <unordered_map>
 #include <vector>
 
+struct EffectData {
+    std::string description;
+};
+
 struct StageData {
     int level;
     int health;
     int attack;
     std::vector<Ability> abilities;
-    std::vector<std::string> effects;
+    std::vector<EffectData> effects;
 };
 
 struct CreatureData {
@@ -25,12 +29,12 @@ struct CreatureData {
 
 struct SpellData {
     int id;
-    int mana;
-    CardType tipo;
-    Rarity raridade;
-    std::string nome;
-    std::string descricao;
-    std::vector<std::string> efeitos;
+    int manaCost;
+    CardType type;
+    Rarity rarity;
+    std::string name;
+    std::string description;
+    std::vector<std::string> effects;
 };
 
 class CardDatabase {
