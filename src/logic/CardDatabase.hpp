@@ -31,7 +31,7 @@ struct SpellData {
     Rarity rarity;
     std::string name;
     std::string description;
-    std::vector<std::string> effects;
+    std::vector<EffectData> effects;
 };
 
 class CardDatabase {

@@ -10,11 +10,9 @@ CreatureCard::CreatureCard(const CreatureData *data, int x, int y)
 
         this->attack = statusIniciais.attack;
         this->health = statusIniciais.health;
-        this->effectDescription = statusIniciais.effects.empty() ? "" : statusIniciais.effects[0];
     } else {
         this->attack = 0;
         this->health = 0;
-        this->effectDescription = "";
     }
 }
 

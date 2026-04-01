@@ -1,16 +1,14 @@
 #include "SceneBattle.hpp"
+#include "../core/GameManager.hpp"
+#include "../logic/CardFactory.hpp"
+#include "../logic/Player.hpp"
 #include "../objects/cards/CreatureCard.hpp"
 #include "../objects/cards/SpellCard.hpp"
-#include "../core/GameManager.hpp"
-#include "../logic/Player.hpp"
-#include "../logic/CardFactory.hpp"
 #include <algorithm>
 #include <iostream>
 #include <random>
 
-SceneBattle::SceneBattle() {
-    draggedCard = nullptr;
-}
+SceneBattle::SceneBattle() { draggedCard = nullptr; }
 
 SceneBattle::~SceneBattle() {}
 
@@ -21,16 +19,16 @@ void SceneBattle::Initialize() {
         std::cerr << "Falha ao carregar a base de dados de cartas." << std::endl;
     }
 
-    enemyPreparationZone  = { 280, 20,  720, 150 };
-    enemyBattleZone       = { 280, 180, 720, 150 };
-    playerBattleZone      = { 280, 390, 720, 150 };
-    playerPreparationZone = { 280, 550, 720, 150 };
-    playerHandZone = { 0, 570, 1280, 150 };
+    enemyPreparationZone = {280, 20, 720, 150};
+    enemyBattleZone = {280, 180, 720, 150};
+    playerBattleZone = {280, 390, 720, 150};
+    playerPreparationZone = {280, 550, 720, 150};
+    playerHandZone = {0, 570, 1280, 150};
 
-    btnBuyCard = { 1050, 600, 150, 50 };
+    btnBuyCard = {1050, 600, 150, 50};
 }
 
-bool SceneBattle::SetCurrentPlayerState(Player* playerState) {
+bool SceneBattle::SetCurrentPlayerState(Player *playerState) {
     if (!playerState) {
         std::cout << "Estado do jogador invalido. Nao foi possivel iniciar a batalha." << std::endl;
         return false;
@@ -46,7 +44,7 @@ void SceneBattle::ResetBattleDeckState() {
     discardPile.clear();
 }
 
-void SceneBattle::AddDeckCardToDrawPile(const std::string& cardId) {
+void SceneBattle::AddDeckCardToDrawPile(const std::string &cardId) {
     int creatureId = 0;
     try {
         creatureId = std::stoi(cardId);
@@ -55,7 +53,7 @@ void SceneBattle::AddDeckCardToDrawPile(const std::string& cardId) {
         return;
     }
 
-    CreatureCard* createdCard = CardFactory::CreateCreatureCard(cardDatabase, creatureId);
+    CreatureCard *createdCard = CardFactory::CreateCreatureCard(cardDatabase, creatureId);
     if (createdCard) {
         createdCard->SetPosition(-200, -200);
         drawPile.push_back(createdCard);
@@ -64,7 +62,7 @@ void SceneBattle::AddDeckCardToDrawPile(const std::string& cardId) {
 }
 
 void SceneBattle::BuildDrawPileFromMasterDeck() {
-    for (const std::string& cardId : currentState->masterDeck) {
+    for (const std::string &cardId : currentState->masterDeck) {
         AddDeckCardToDrawPile(cardId);
     }
 }
@@ -75,7 +73,7 @@ void SceneBattle::ShuffleDrawPile() {
     std::shuffle(drawPile.begin(), drawPile.end(), rng);
 }
 
-void SceneBattle::StartBattle(Player* playerState) {
+void SceneBattle::StartBattle(Player *playerState) {
     if (!SetCurrentPlayerState(playerState)) {
         return;
     }
@@ -92,18 +90,19 @@ void SceneBattle::StartBattle(Player* playerState) {
 void SceneBattle::DrawCards(int amount) {
     for (int i = 0; i < amount; ++i) {
         if (drawPile.empty()) {
-            std::cout << "Pilha de compra vazia! Num jogo real, você embaralharia o descarte aqui.\n";
+            std::cout
+                << "Pilha de compra vazia! Num jogo real, você embaralharia o descarte aqui.\n";
             break;
         }
 
-        Card* drawnCard = drawPile.back();
+        Card *drawnCard = drawPile.back();
         drawPile.pop_back();
         hand.push_back(drawnCard);
     }
     OrganizeZone(hand, playerHandZone);
 }
 
-bool SceneBattle::IsBuyCardButtonClick(const SDL_Event& event) const {
+bool SceneBattle::IsBuyCardButtonClick(const SDL_Event &event) const {
     if (event.type != SDL_MOUSEBUTTONDOWN || event.button.button != SDL_BUTTON_LEFT) {
         return false;
     }
@@ -116,7 +115,7 @@ void SceneBattle::HandleBuyCardAction() {
     DrawCards(1);
 }
 
-void SceneBattle::HandleInput(SDL_Event& event) {
+void SceneBattle::HandleInput(SDL_Event &event) {
     if (IsBuyCardButtonClick(event)) {
         HandleBuyCardAction();
     }
@@ -127,9 +126,9 @@ void SceneBattle::Update(float dt) {
     }
 }
 
-void SceneBattle::Render(SDL_Renderer* renderer) {
+void SceneBattle::Render(SDL_Renderer *renderer) {
 
-    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);    
+    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
     SDL_RenderDrawRect(renderer, &enemyPreparationZone);
     SDL_RenderDrawRect(renderer, &enemyBattleZone);
     SDL_RenderDrawRect(renderer, &playerBattleZone);
@@ -143,13 +142,13 @@ void SceneBattle::Render(SDL_Renderer* renderer) {
     }
 }
 
-void SceneBattle::OrganizeZone(std::vector<Card*>& zoneCards, SDL_Rect zoneRect) {
+void SceneBattle::OrganizeZone(std::vector<Card *> &zoneCards, SDL_Rect zoneRect) {
     int numCards = zoneCards.size();
     if (numCards == 0) return;
 
     int cardWidth = 100;
     int cardHeight = 140;
-    int gap = 15; 
+    int gap = 15;
 
     int totalWidth = (numCards * cardWidth) + ((numCards - 1) * gap);
     int startX = (zoneRect.x + (zoneRect.w / 2)) - (totalWidth / 2);
@@ -157,25 +156,23 @@ void SceneBattle::OrganizeZone(std::vector<Card*>& zoneCards, SDL_Rect zoneRect)
 
     for (int i = 0; i < numCards; ++i) {
         int cardX = startX + i * (cardWidth + gap);
-        zoneCards[i]->SetPosition(cardX, yPos); 
+        zoneCards[i]->SetPosition(cardX, yPos);
     }
 }
 
-void SceneBattle::AddCardToPlayerPreparation(Card* card) {
+void SceneBattle::AddCardToPlayerPreparation(Card *card) {
     if (playerPreparationCards.size() < 6) {
         playerPreparationCards.push_back(card);
         objects.push_back(card);
 
         OrganizeZone(playerPreparationCards, playerPreparationZone);
 
-        std::cout << card->GetName()
-                  << " adicionado ao campo de Preparacao do Jogador!" << std::endl;
+        std::cout << card->GetName() << " adicionado ao campo de Preparacao do Jogador!"
+                  << std::endl;
 
-        if (auto* creature = dynamic_cast<CreatureCard*>(card)) {
-            std::cout << creature->GetAttack()
-                      << " de ATK e "
-                      << creature->GetHealth()
-                      << " de HP." << std::endl;
+        if (auto *creature = dynamic_cast<CreatureCard *>(card)) {
+            std::cout << creature->GetAttack() << " de ATK e " << creature->GetHealth() << " de HP."
+                      << std::endl;
         }
     } else {
         std::cout << "Campo de Preparacao esta cheio! Limite de 6 cartas." << std::endl;

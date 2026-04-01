@@ -1,6 +1,6 @@
 #pragma once
 #include "../base/DynamicObject.hpp"
-#include "./CardTypes.hpp"
+#include "./types/CardTypes.hpp"
 #include <string>
 #include <vector>
 
@@ -26,5 +26,5 @@ class Card : public DynamicObject {
         y = newY;
     }
 
-    const std::string& GetName() const { return name; }
+    const std::string &GetName() const { return name; }
 };

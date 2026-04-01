@@ -2,6 +2,7 @@
 #include "types/CardEffectTypes.hpp"
 #include <functional>
 #include <unordered_map>
+#include <vector>
 
 struct EffectContext {
     class Card *source;
