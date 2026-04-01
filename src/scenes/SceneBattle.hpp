@@ -28,6 +28,8 @@ private:
 
     bool IsBuyCardButtonClick(const SDL_Event& event) const;
     void HandleBuyCardAction();
+    bool IsHandCardClick(const SDL_Event& event, const Card* card) const;
+    void HandleHandCardAction(const SDL_Event& event);
     void OrganizeZone(std::vector<Card*>& zoneCards, SDL_Rect zoneRect);
     bool SetCurrentPlayerState(Player* playerState);
     void ResetBattleDeckState();
@@ -45,5 +47,5 @@ public:
     void Render(SDL_Renderer* renderer) override;
     void StartBattle(Player* state);
     void DrawCards(int amount);
-    void AddCardToPlayerPreparation(Card* card);
+    bool AddCardToPlayerPreparation(Card* card);
 };
