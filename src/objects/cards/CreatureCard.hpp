@@ -1,5 +1,5 @@
 #pragma once
-#include "../logic/CardDatabase.hpp"
+#include "../../logic/CardDatabase.hpp"
 #include "./Card.hpp"
 
 class CreatureCard : public Card {
