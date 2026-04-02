@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../objects/cards/types/CardEffectTypes.hpp"
-#include "../objects/cards/types/CardTypes.hpp"
+#include "../../objects/cards/types/CardEffectTypes.hpp"
+#include "../../objects/cards/types/CardTypes.hpp"
 #include <string>
 #include <unordered_map>
 #include <vector>

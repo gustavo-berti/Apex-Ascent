@@ -1,4 +1,4 @@
-#include "../../logic/CardDatabase.hpp"
+#include "../../core/data/CardDatabase.hpp"
 #include "./Card.hpp"
 
 enum class SpellType { FAST, SLOW };
