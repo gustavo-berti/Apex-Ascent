@@ -13,4 +13,9 @@ class DynamicObject : public GameObject {
         virtual void Initialize() = 0;
         virtual void Update(float dt) = 0;
         virtual void Render(SDL_Renderer* renderer) = 0;
+
+        int GetX() const { return x; }
+        int GetY() const { return y; }
+        int GetWidth() const { return width; }
+        int GetHeight() const { return height; }
 };

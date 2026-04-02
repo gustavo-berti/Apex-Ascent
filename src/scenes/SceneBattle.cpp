@@ -21,13 +21,13 @@ void SceneBattle::Initialize() {
         std::cerr << "Falha ao carregar a base de dados de cartas." << std::endl;
     }
 
-    enemyPreparationZone  = { 280, 20,  720, 150 };
-    enemyBattleZone       = { 280, 180, 720, 150 };
-    playerBattleZone      = { 280, 390, 720, 150 };
-    playerPreparationZone = { 280, 550, 720, 150 };
-    playerHandZone = { 0, 570, 1280, 150 };
+    enemyPreparationZone  = { 440, 25,  720, 150 };
+    enemyBattleZone       = { 440, 200, 720, 150 };
+    playerBattleZone      = { 440, 488, 720, 150 };
+    playerPreparationZone = { 440, 663, 720, 150 };
+    playerHandZone = { 0, 740, 1600, 188 };
 
-    btnBuyCard = { 1050, 600, 150, 50 };
+    btnBuyCard = { 1420, 740, 150, 50 };
 }
 
 bool SceneBattle::SetCurrentPlayerState(Player* playerState) {
@@ -92,7 +92,7 @@ void SceneBattle::StartBattle(Player* playerState) {
 void SceneBattle::DrawCards(int amount) {
     for (int i = 0; i < amount; ++i) {
         if (drawPile.empty()) {
-            std::cout << "Pilha de compra vazia! Num jogo real, você embaralharia o descarte aqui.\n";
+            std::cout << "Pilha de compra vazia! Num jogo real, você perderia aqui.\n";
             break;
         }
 
@@ -111,15 +111,80 @@ bool SceneBattle::IsBuyCardButtonClick(const SDL_Event& event) const {
     return GameManager::IsPointInsideRect(event.button.x, event.button.y, btnBuyCard);
 }
 
+bool SceneBattle::IsHandCardClick(const SDL_Event& event, const Card* card) const {
+    if (event.type != SDL_MOUSEBUTTONDOWN || event.button.button != SDL_BUTTON_LEFT || !card) {
+        return false;
+    }
+
+    SDL_Rect cardRect = { card->GetX(), card->GetY(), card->GetWidth(), card->GetHeight() };
+    return GameManager::IsPointInsideRect(event.button.x, event.button.y, cardRect);
+}
+
 void SceneBattle::HandleBuyCardAction() {
     std::cout << "Botao clicado! Puxando a proxima carta do jogador..." << std::endl;
     DrawCards(1);
 }
 
+bool SceneBattle::HandleHandCardAction(const SDL_Event& event) {
+    for (auto it = hand.rbegin(); it != hand.rend(); ++it) {
+        Card* card = *it;
+
+        if (!IsHandCardClick(event, card)) {
+            continue;
+        }
+
+        if (!AddCardToPlayerPreparation(card)) {
+            return true;
+        }
+
+        hand.erase(std::next(it).base());
+        OrganizeZone(hand, playerHandZone);
+        return true;
+    }
+
+    return false;
+}
+
+bool SceneBattle::IsPreparationCardClick(const SDL_Event& event, const Card* card) const {
+    if (event.type != SDL_MOUSEBUTTONDOWN || event.button.button != SDL_BUTTON_LEFT || !card) {
+        return false;
+    }
+
+    SDL_Rect cardRect = { card->GetX(), card->GetY(), card->GetWidth(), card->GetHeight() };
+    return GameManager::IsPointInsideRect(event.button.x, event.button.y, cardRect);
+}
+
+bool SceneBattle::HandlePreparationCardAction(const SDL_Event& event) {
+    for (auto it = playerPreparationCards.rbegin(); it != playerPreparationCards.rend(); ++it) {
+        Card* card = *it;
+
+        if (!IsPreparationCardClick(event, card)) {
+            continue;
+        }
+
+        if (!AddCardToPlayerBattle(card)) {
+            return true;
+        }
+
+        playerPreparationCards.erase(std::next(it).base());
+        OrganizeZone(playerPreparationCards, playerPreparationZone);
+        return true;
+    }
+
+    return false;
+}
+
 void SceneBattle::HandleInput(SDL_Event& event) {
     if (IsBuyCardButtonClick(event)) {
         HandleBuyCardAction();
+        return;
     }
+
+    if (HandleHandCardAction(event)) {
+        return;
+    }
+
+    HandlePreparationCardAction(event);
 }
 void SceneBattle::Update(float dt) {
     for (auto obj : objects) {
@@ -138,8 +203,16 @@ void SceneBattle::Render(SDL_Renderer* renderer) {
     SDL_SetRenderDrawColor(renderer, 0, 200, 0, 255);
     SDL_RenderFillRect(renderer, &btnBuyCard);
 
-    for (auto obj : objects) {
-        obj->Render(renderer);
+    for (auto* card : playerPreparationCards) {
+        card->Render(renderer);
+    }
+
+    for (auto* card : playerBattleCards) {
+        card->Render(renderer);
+    }
+
+    for (auto* card : hand) {
+        card->Render(renderer);
     }
 }
 
@@ -161,10 +234,9 @@ void SceneBattle::OrganizeZone(std::vector<Card*>& zoneCards, SDL_Rect zoneRect)
     }
 }
 
-void SceneBattle::AddCardToPlayerPreparation(Card* card) {
+bool SceneBattle::AddCardToPlayerPreparation(Card* card) {
     if (playerPreparationCards.size() < 6) {
         playerPreparationCards.push_back(card);
-        objects.push_back(card);
 
         OrganizeZone(playerPreparationCards, playerPreparationZone);
 
@@ -177,7 +249,33 @@ void SceneBattle::AddCardToPlayerPreparation(Card* card) {
                       << creature->GetHealth()
                       << " de HP." << std::endl;
         }
+
+        return true;
     } else {
         std::cout << "Campo de Preparacao esta cheio! Limite de 6 cartas." << std::endl;
+        return false;
+    }
+}
+
+bool SceneBattle::AddCardToPlayerBattle(Card* card) {
+    if (playerBattleCards.size() < 6) {
+        playerBattleCards.push_back(card);
+
+        OrganizeZone(playerBattleCards, playerBattleZone);
+
+        std::cout << card->GetName()
+                  << " adicionado ao campo de Ataque do Jogador!" << std::endl;
+
+        if (auto* creature = dynamic_cast<CreatureCard*>(card)) {
+            std::cout << creature->GetAttack()
+                      << " de ATK e "
+                      << creature->GetHealth()
+                      << " de HP." << std::endl;
+        }
+
+        return true;
+    } else {
+        std::cout << "Campo de Ataque esta cheio! Limite de 6 cartas." << std::endl;
+        return false;
     }
 }
