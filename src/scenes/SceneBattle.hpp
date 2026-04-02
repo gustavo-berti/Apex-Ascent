@@ -29,7 +29,10 @@ private:
     bool IsBuyCardButtonClick(const SDL_Event& event) const;
     void HandleBuyCardAction();
     bool IsHandCardClick(const SDL_Event& event, const Card* card) const;
-    void HandleHandCardAction(const SDL_Event& event);
+    bool HandleHandCardAction(const SDL_Event& event);
+    bool IsPreparationCardClick(const SDL_Event& event, const Card* card) const;
+    bool HandlePreparationCardAction(const SDL_Event& event);
+    bool AddCardToPlayerBattle(Card* card);
     void OrganizeZone(std::vector<Card*>& zoneCards, SDL_Rect zoneRect);
     bool SetCurrentPlayerState(Player* playerState);
     void ResetBattleDeckState();
