@@ -1,14 +1,21 @@
 #pragma once
-#include "types/CardEffectTypes.hpp"
+#include "../scenes/SceneBattle.hpp"
+#include "Card.hpp"
+#include "CreatureCard.hpp"
 #include <functional>
 #include <unordered_map>
 #include <vector>
 
 struct EffectContext {
-    class Card *source;
-    class Card *enemy;
-    class SceneBattle *scene;
-    int kills_count;
+    Card *source = nullptr;
+    CreatureCard *target = nullptr;
+
+    SceneBattle *scene = nullptr;
+
+    std::vector<CreatureCard *> *allies = nullptr;
+    std::vector<CreatureCard *> *enemies = nullptr;
+
+    int kills_count = 0;
 };
 
 class EffectManager {
@@ -18,7 +25,7 @@ class EffectManager {
     EffectManager();
 
     void execute(EffectData &effect, EffectContext &ctx);
-    void processPassives(std::vector<Card *> &field, SceneBattle *scene);
+    void processPassives(std::vector<CreatureCard *> &field, SceneBattle *scene);
 
   private:
     std::unordered_map<EffectAction, EffectFn> dispatch_;

@@ -120,6 +120,7 @@ void SceneBattle::HandleInput(SDL_Event &event) {
         HandleBuyCardAction();
     }
 }
+
 void SceneBattle::Update(float dt) {
     for (auto obj : objects) {
         obj->Update(dt);

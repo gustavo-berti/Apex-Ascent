@@ -20,10 +20,13 @@ class CreatureCard : public Card {
     virtual void Initialize() override;
     virtual void Update(float dt) override;
     virtual void Render(SDL_Renderer *renderer) override;
+
     void GainXP();
     void LevelUp();
     int GetAttack() const { return attack; }
     int GetHealth() const { return health; }
+    void AddAttack(int amount) { attack += amount; }
+    void AddHealth(int amount) { health += amount; }
 
     bool hasAbility(Ability ability) const {
         for (const auto &a : abilities) {

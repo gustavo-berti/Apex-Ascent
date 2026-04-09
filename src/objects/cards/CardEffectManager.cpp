@@ -14,4 +14,11 @@ void EffectManager::execute(EffectData &effect, EffectContext &ctx) {
     }
 }
 
-void EffectManager::registerAll() {}
+void EffectManager::registerAll() {
+    dispatch_[EffectAction::BUFF_SELF] = [](EffectData &effect, EffectContext &ctx) {
+        if (!ctx.target) return;
+
+        ctx.target->AddAttack(effect.params.attack_bonus);
+        ctx.target->AddHealth(effect.params.health_bonus);
+    };
+}
