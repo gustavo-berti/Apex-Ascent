@@ -30,6 +30,23 @@
                     "effects": []
                 }
             ]
+        },
+        {
+          "id": 23,
+          "display_name": "Dragartixa",
+          "race": "DRAGON",
+          "rarity": "RARE",
+          "mana": 3,
+          "description": "'...' - Ernest",
+          "stages": [
+            {
+              "level": 0,
+              "attack": 2,
+              "health": 5,
+              "abilities": [],
+              "effects": []
+            }
+          ]
         }
     ],
     "spells": [
