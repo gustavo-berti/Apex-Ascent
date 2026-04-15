@@ -1,6 +1,6 @@
 #pragma once
 #include "../base/DynamicObject.hpp"
-#include "./CardTypes.hpp"
+#include "./types/CardTypes.hpp"
 #include <string>
 #include <vector>
 
@@ -9,7 +9,6 @@ class Card : public DynamicObject {
     std::string name;
     int manaCost;
     std::string description;
-    std::vector<Ability> abilities;
     Rarity rarity;
     std::string imagePath;
 
@@ -22,19 +21,10 @@ class Card : public DynamicObject {
     virtual void Render(SDL_Renderer *renderer) override;
     virtual void ActivateEffect() {};
 
-    bool hasAbility(Ability ability) const {
-        for (const auto &a : abilities) {
-            if (a == ability) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     void SetPosition(int newX, int newY) {
         x = newX;
         y = newY;
     }
 
-    const std::string& GetName() const { return name; }
+    const std::string &GetName() const { return name; }
 };
