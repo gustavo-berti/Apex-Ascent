@@ -260,27 +260,6 @@ bool SceneBattle::AddCardToPlayerBattle(Card *card) {
 
         OrganizeZone(playerBattleCards, playerBattleZone);
 
-        std::cout << card->GetName() << " adicionado ao campo de Preparacao do Jogador!"
-                  << std::endl;
-
-        if (auto *creature = dynamic_cast<CreatureCard *>(card)) {
-            std::cout << creature->GetAttack() << " de ATK e " << creature->GetHealth() << " de HP."
-                      << std::endl;
-        }
-
-        return true;
-    } else {
-        std::cout << "Campo de Preparacao esta cheio! Limite de 6 cartas." << std::endl;
-        return false;
-    }
-}
-
-bool SceneBattle::AddCardToPlayerBattle(Card *card) {
-    if (playerBattleCards.size() < 6) {
-        playerBattleCards.push_back(card);
-
-        OrganizeZone(playerBattleCards, playerBattleZone);
-
         std::cout << card->GetName() << " adicionado ao campo de Ataque do Jogador!" << std::endl;
 
         if (auto *creature = dynamic_cast<CreatureCard *>(card)) {
