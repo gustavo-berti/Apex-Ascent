@@ -183,9 +183,13 @@ void SceneBattle::ToggleAttackerSelection(Card *card) {
 
     auto it = std::find(selectedAttackers.begin(), selectedAttackers.end(), card);
     if (it != selectedAttackers.end()) {
-        selectedAttackers.erase(it);
-        MoveCardFromBattleToPreparation(card);
-        std::cout << "[COMBATE] " << card->GetName() << " removido dos atacantes." << std::endl;
+        if (MoveCardFromBattleToPreparation(card)) {
+            selectedAttackers.erase(it);
+            std::cout << "[COMBATE] " << card->GetName() << " removido dos atacantes." << std::endl;
+        } else {
+            std::cout << "[COMBATE] " << card->GetName()
+                      << " nao pode voltar para preparacao agora." << std::endl;
+        }
     } else {
         if (MoveCardFromPreparationToBattle(card)) {
             selectedAttackers.push_back(card);
@@ -221,6 +225,12 @@ bool SceneBattle::MoveCardFromBattleToPreparation(Card *card) {
     if (battleIt == playerBattleCards.end()) return false;
 
     if (playerPreparationCards.size() >= 6) {
+        if (turnManager.GetCombatStep() != CombatStep::RESOLUTION) {
+            std::cout << "[COMBATE] Campo de preparacao cheio. So remove carta em RESOLUTION."
+                      << std::endl;
+            return false;
+        }
+
         if (!RemoveRightmostPreparationCard()) {
             std::cout << "[COMBATE] Falha ao liberar espaco no campo de preparacao." << std::endl;
             return false;
@@ -245,6 +255,7 @@ void SceneBattle::ReturnSelectedAttackersToPreparation() {
 
 bool SceneBattle::RemoveRightmostPreparationCard() {
     if (playerPreparationCards.empty()) return false;
+    if (CombatStep::RESOLUTION != turnManager.GetCombatStep()) return false;
 
     auto it = std::max_element(playerPreparationCards.begin(), playerPreparationCards.end(),
                                [](const Card *a, const Card *b) {
@@ -364,6 +375,11 @@ bool SceneBattle::HandleHandCardClick(const SDL_Event &e) {
         bool isCreature = dynamic_cast<CreatureCard *>(card) != nullptr;
 
         if (isCreature && CanPlayCreature()) {
+            if (playerPreparationZone.w - playerPreparationCards.size() * 110 < 0) {
+                std::cout << "[PREPARACAO] Campo cheio! Nao e possivel jogar " << card->GetName()
+                          << std::endl;
+                return true;
+            }
             if (AddCardToPlayerPreparation(card)) {
                 hand.erase(std::next(it).base());
                 OrganizeZone(hand, playerHandZone);
@@ -545,8 +561,13 @@ bool SceneBattle::AddCardToPlayerBattle(Card *card) {
 
 bool SceneBattle::AddCardToPlayerPreparation(Card *card) {
     if (playerPreparationCards.size() >= 6) {
-        if (!RemoveRightmostPreparationCard()) {
+        if (turnManager.GetCombatStep() != CombatStep::RESOLUTION) {
             std::cout << "Campo de preparacao cheio! (max 6)" << std::endl;
+            return false;
+        }
+
+        if (!RemoveRightmostPreparationCard()) {
+            std::cout << "Falha ao remover carta da direita em RESOLUTION." << std::endl;
             return false;
         }
     }
