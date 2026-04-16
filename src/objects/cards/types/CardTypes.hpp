@@ -10,7 +10,7 @@ enum class CardType { CREATURE, SPELL };
 
 enum class SpellSpeed { FAST, SLOW };
 
-enum class Ability { SHIELD, TERRIFY, QUICK_ATTACK, DECAY, NONE };
+enum class Ability { SHIELD, TERRIFY, QUICK_ATTACK, ROT, PIERCING, NONE };
 
 inline std::string translateRace(Race r) {
     switch (r) {
@@ -70,8 +70,10 @@ inline std::string translateAbility(Ability a) {
         return "Aterrorizar";
     case Ability::QUICK_ATTACK:
         return "Ataque Rápido";
-    case Ability::DECAY:
-        return "Decaimento";
+    case Ability::ROT:
+        return "Apodrecer";
+    case Ability::PIERCING:
+        return "Perfurar";
     case Ability::NONE:
         return "Nenhuma";
     }

@@ -1,6 +1,6 @@
 #pragma once
 #include "../core/GameWorld.hpp"
-#include "../logic/CardDatabase.hpp"
+#include "../core/data/CardDatabase.hpp"
 #include "../logic/Player.hpp"
 #include "../logic/TurnManager.hpp"
 #include "../objects/cards/Card.hpp"

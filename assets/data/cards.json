@@ -9,21 +9,21 @@
             "mana": 1,
             "stages": [
                 {
-                    "level": 0,
+                    "level": 1,
                     "attack": 2,
                     "health": 2,
                     "abilities": [],
                     "effects": []
                 },
                 {
-                    "level": 1,
+                    "level": 2,
                     "attack": 2,
                     "health": 4,
                     "abilities": [],
                     "effects": []
                 },
                 {
-                    "level": 2,
+                    "level": 3,
                     "attack": 3,
                     "health": 5,
                     "abilities": [],
@@ -32,33 +32,266 @@
             ]
         },
         {
-          "id": 23,
-          "display_name": "Dragartixa",
-          "race": "DRAGON",
-          "rarity": "RARE",
-          "mana": 3,
-          "description": "'...' - Ernest",
-          "stages": [
-            {
-              "level": 0,
-              "attack": 2,
-              "health": 5,
-              "abilities": [],
-              "effects": []
-            }
-          ]
+            "id": 21,
+            "display_name": "Asas Benevolentes",
+            "race": "PIXIE",
+            "rarity": "RARE",
+            "mana": 3,
+            "description": "Suas asas soltam uma poeira mágica curativa",
+            "stages": [
+                {
+                    "level": 0,
+                    "attack": 2,
+                    "health": 2,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ENTER",
+                            "action": "HEAL_TARGET",
+                            "target": "ALLY_CHOOSE",
+                            "condition": "NONE",
+                            "params": {
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 1,
+                    "attack": 3,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ENTER",
+                            "action": "HEAL_TARGET",
+                            "target": "ALLY_CHOOSE",
+                            "condition": "NONE",
+                            "params": {
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 4,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ENTER",
+                            "action": "HEAL_TARGET",
+                            "target": "ALLY_CHOOSE",
+                            "condition": "NONE",
+                            "params": {
+                                "amount": 1
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 24,
+            "display_name": "Venenoso",
+            "race": "DRAGON",
+            "rarity": "RARE",
+            "mana": 5,
+            "description": "'Sempre que vai caçar solta um veneno ao redor de sua presa para comê-lo de forma mais fácil' - Ernest",
+            "stages": [
+                {
+                    "level": 0,
+                    "attack": 3,
+                    "health": 7,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ATTACK_BLOCKED",
+                            "action": "APPLY_STATUS_TO_ENEMY",
+                            "target": "ENEMY_CHOOSE",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_apply": "ROT"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 1,
+                    "attack": 5,
+                    "health": 7,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ATTACK_BLOCKED",
+                            "action": "APPLY_STATUS_TO_ENEMY",
+                            "target": "ENEMY_CHOOSE",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_apply": "ROT"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 6,
+                    "health": 8,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ATTACK_BLOCKED",
+                            "action": "APPLY_STATUS_TO_ENEMY",
+                            "target": "ENEMY_CHOOSE",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_apply": "ROT"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 28,
+            "display_name": "Punho Veloz",
+            "race": "AUTOMAT",
+            "rarity": "UNCOMMON",
+            "mana": 2,
+            "description": "Com mecanismo de jabs muito bem desenvolvido, seus golpes são tão rápidos quanto o som",
+            "stages": [
+                {
+                    "level": 0,
+                    "attack": 4,
+                    "health": 1,
+                    "abilities": [
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": []
+                },
+                {
+                    "level": 1,
+                    "attack": 6,
+                    "health": 1,
+                    "abilities": [
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 8,
+                    "health": 1,
+                    "abilities": [
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 38,
+            "display_name": "Rato Mecânico",
+            "race": "AUTOMAT",
+            "rarity": "EPIC",
+            "mana": 2,
+            "description": "Ninguém entende porque foi criado um bicho que simplesmente só vai atrás de lixo",
+            "stages": [
+                {
+                    "level": 0,
+                    "attack": 1,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE_COND",
+                            "action": "BUFF_SELF_PER_COUNT",
+                            "target": "SELF",
+                            "condition": "COUNT_DECAYED_GTE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "count_threshold": 1
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 1,
+                    "attack": 1,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE_COND",
+                            "action": "BUFF_SELF_PER_COUNT",
+                            "target": "SELF",
+                            "condition": "COUNT_DECAYED_GTE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "count_threshold": 1
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 1,
+                    "health": 7,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE_COND",
+                            "action": "BUFF_SELF_PER_COUNT",
+                            "target": "SELF",
+                            "condition": "COUNT_DECAYED_GTE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "count_threshold": 1
+                            }
+                        }
+                    ]
+                }
+            ]
         }
     ],
     "spells": [
         {
-            "id": 1,
-            "display_name": "Fortalecer Vida",
+            "id": 57,
+            "display_name": "Negócios Legais",
             "type": "FAST",
             "rarity": "COMMON",
-            "mana": 2,
-            "description": "Aumenta a vida de uma criatura aliada em 2 pontos.",
+            "mana": 3,
+            "description": "Compre 2 cartas",
             "effects": [
-                "buff_vida_2"
+                {
+                    "trigger": "ON_SPELL_CAST",
+                    "action": "DRAW_CARDS",
+                    "target": "SELF",
+                    "condition": "NONE",
+                    "params": {
+                        "draw_count": 2
+                    }
+                }
+            ]
+        },
+        {
+            "id": 77,
+            "display_name": "Bomba Corrosiva",
+            "type": "SLOW",
+            "rarity": "LEGENDARY",
+            "mana": 6,
+            "description": "Dê apodrecer a todas as cartas no campo do oponente.",
+            "effects": [
+                {
+                    "trigger": "ON_SPELL_CAST",
+                    "action": "APPLY_STATUS_TO_ENEMY",
+                    "target": "ENEMY_ALL",
+                    "condition": "NONE",
+                    "params": {
+                        "ability_to_apply": "ROT"
+                    }
+                }
             ]
         }
     ]

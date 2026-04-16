@@ -15,7 +15,7 @@ void SceneBattle::Initialize() {
 
     if (!cardDatabase.LoadFromJson("assets/data/cards.json"))
         std::cerr << "Falha ao carregar cards.json" << std::endl;
-
+    
     // ── Layout do tabuleiro (1600x900) ────────────────────────────
     //
     //  [enemyPreparationZone ]   y=25

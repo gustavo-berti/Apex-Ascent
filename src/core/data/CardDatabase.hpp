@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../objects/cards/CardTypes.hpp"
+#include "../../objects/cards/types/CardEffectTypes.hpp"
+#include "../../objects/cards/types/CardTypes.hpp"
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -10,7 +11,7 @@ struct StageData {
     int health;
     int attack;
     std::vector<Ability> abilities;
-    std::vector<std::string> effects;
+    std::vector<EffectData> effects;
 };
 
 struct CreatureData {
@@ -25,23 +26,18 @@ struct CreatureData {
 
 struct SpellData {
     int id;
-    int mana;
-    CardType tipo;
-    Rarity raridade;
-    std::string nome;
-    std::string descricao;
-    std::vector<std::string> efeitos;
+    int manaCost;
+    CardType type;
+    Rarity rarity;
+    std::string name;
+    std::string description;
+    std::vector<EffectData> effects;
 };
 
 class CardDatabase {
   private:
     std::unordered_map<int, CreatureData> creatureCards;
     std::unordered_map<int, SpellData> spellCards;
-
-    Race StringToRace(const std::string &racaStr);
-    Rarity StringToRarity(const std::string &raridadeStr);
-    CardType StringToSpellType(const std::string &tipoStr);
-    Ability StringToAbility(const std::string &abilityStr);
 
   public:
     CardDatabase() = default;
