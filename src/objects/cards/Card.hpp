@@ -19,7 +19,7 @@ class Card : public DynamicObject {
     virtual void Initialize() override;
     virtual void Update(float dt) override;
     virtual void Render(SDL_Renderer *renderer) override;
-    virtual void ActivateEffect() {};
+    virtual void ActivateEffect() {}
 
     void SetPosition(int newX, int newY) {
         x = newX;
@@ -27,4 +27,5 @@ class Card : public DynamicObject {
     }
 
     const std::string &GetName() const { return name; }
+    int GetManaCost() const { return manaCost; }
 };
