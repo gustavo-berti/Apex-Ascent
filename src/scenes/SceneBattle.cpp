@@ -73,11 +73,12 @@ void SceneBattle::ShuffleDrawPile() {
     std::shuffle(drawPile.begin(), drawPile.end(), rng);
 }
 
-void SceneBattle::StartBattle(Player *playerState) {
+void SceneBattle::StartBattle(Player *playerState, SDL_Renderer *renderer) {
     if (!SetCurrentPlayerState(playerState)) {
         return;
     }
 
+    this->renderer = renderer;
     std::cout << "Montando o Battle Deck a partir do Master Deck...\n";
 
     ResetBattleDeckState();
@@ -97,6 +98,8 @@ void SceneBattle::DrawCards(int amount) {
         Card *drawnCard = drawPile.back();
         drawPile.pop_back();
         hand.push_back(drawnCard);
+
+        drawnCard->LoadTexture(renderer);
     }
     OrganizeZone(hand, playerHandZone);
 }
@@ -192,7 +195,6 @@ void SceneBattle::Update(float dt) {
 }
 
 void SceneBattle::Render(SDL_Renderer *renderer) {
-
     SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
     SDL_RenderDrawRect(renderer, &enemyPreparationZone);
     SDL_RenderDrawRect(renderer, &enemyBattleZone);

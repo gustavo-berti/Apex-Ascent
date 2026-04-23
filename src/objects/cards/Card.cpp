@@ -1,10 +1,35 @@
 #include "Card.hpp"
+#include <iostream>
+
+const std::map<Rarity, Color> Card::rarityColors = {
+    {Rarity::COMMON, Color(100, 100, 100, 255)},  // Gray
+    {Rarity::UNCOMMON, Color(50, 150, 50, 255)},  // Green
+    {Rarity::RARE, Color(50, 50, 150, 255)},      // Blue
+    {Rarity::EPIC, Color(150, 50, 150, 255)},     // Purple
+    {Rarity::LEGENDARY, Color(200, 150, 50, 255)} // Orange
+};
+
+Color Card::GetRarityColor() const {
+    auto it = rarityColors.find(rarity);
+    if (it != rarityColors.end()) {
+        return it->second;
+    }
+
+    std::cerr << "Rarity invalida em Card::GetRarityColor: " << static_cast<int>(rarity)
+              << std::endl;
+    return Color(100, 100, 100, 255);
+}
 
 Card::Card(std::string name, int manaCost, Rarity rarity, std::string imagePath, int x, int y)
     : DynamicObject(x, y, 100, 140), name(name), manaCost(manaCost), rarity(rarity),
       imagePath(imagePath) {}
 
-Card::~Card() {}
+Card::~Card() {
+    if (texture) {
+        SDL_DestroyTexture(texture);
+        texture = nullptr;
+    }
+}
 
 void Card::Initialize() {}
 
@@ -13,21 +38,32 @@ void Card::Update(float dt) {}
 void Card::Render(SDL_Renderer *renderer) {
     SDL_Rect rect = {x, y, width, height};
 
-    if (rarity == Rarity::COMMON) {
-        SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255); // Gray
-    } else if (rarity == Rarity::UNCOMMON) {
-        SDL_SetRenderDrawColor(renderer, 50, 150, 50, 255); // Green
-    } else if (rarity == Rarity::RARE) {
-        SDL_SetRenderDrawColor(renderer, 50, 50, 150, 255); // Blue
-    } else if (rarity == Rarity::EPIC) {
-        SDL_SetRenderDrawColor(renderer, 150, 50, 150, 255); // Purple
-    } else if (rarity == Rarity::LEGENDARY) {
-        SDL_SetRenderDrawColor(renderer, 200, 150, 50, 255); // Orange
-    }
-    SDL_RenderFillRect(renderer, &rect);
+    if (texture) {
+        SDL_RenderCopy(renderer, texture, nullptr, &rect);
+    } else {
+        Color borderColor = GetRarityColor();
+        SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b,
+                               borderColor.a);
+        SDL_RenderFillRect(renderer, &rect);
 
-    int padding = 4;
-    SDL_Rect innerRect = {x + padding, y + padding, width - padding * 2, height - padding * 2};
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderFillRect(renderer, &innerRect);
+        int padding = 4;
+        SDL_Rect innerRect = {x + padding, y + padding, width - padding * 2, height - padding * 2};
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderFillRect(renderer, &innerRect);
+    }
+}
+
+void Card::LoadTexture(SDL_Renderer *renderer) {
+    if (imagePath.empty()) return;
+
+    SDL_Surface *surface = IMG_Load(imagePath.c_str());
+    if (!surface) {
+        std::cerr << "Erro ao carregar imagem: " << imagePath << " — " << IMG_GetError()
+                  << std::endl;
+        return;
+    }
+
+    this->texture = SDL_CreateTextureFromSurface(renderer, surface);
+    this->renderer = renderer;
+    SDL_FreeSurface(surface);
 }
