@@ -3,7 +3,7 @@
 
 using json = nlohmann::json;
 
-EffectData ParseEffect(const json &effect) {
+EffectData CardParser::ParseEffect(const json &effect) {
     EffectData data;
 
     data.trigger = StringToEffectTrigger(effect.value("trigger", std::string("ON_ENTER")));
@@ -28,31 +28,50 @@ EffectData ParseEffect(const json &effect) {
     return data;
 }
 
-CreatureData ParseCreature(const json &creature) {
+GenericData CardParser::ParseGeneric(const json &card) {
+    GenericData data;
+
+    data.id = card.value("id", -1);
+    data.name = card.value("display_name", std::string("Unnamed Card"));
+    data.description = card.value("description", std::string(""));
+    data.rarity = StringToRarity(card.value("rarity", std::string("COMMON")));
+    data.manaCost = card.value("mana", 0);
+    data.imagePath = card.value("image_path", "");
+
+    return data;
+}
+
+CreatureData CardParser::ParseCreature(const json &creature) {
     CreatureData data;
 
-    data.id = creature["id"];
-    data.name = creature["display_name"];
-    data.description = creature["description"];
-    data.race = StringToRace(creature["race"]);
-    data.rarity = StringToRarity(creature["rarity"]);
-    data.manaCost = creature["mana"];
+    GenericData generic = ParseGeneric(creature);
+    static_cast<GenericData &>(data) = generic;
+
+    data.race = StringToRace(creature.value("race", std::string("NONE")));
+
+    if (!creature.contains("stages") || !creature["stages"].is_array()) {
+        return data;
+    }
 
     for (const auto &stage : creature["stages"]) {
         StageData stageData;
-        stageData.level = stage["level"];
-        stageData.health = stage["health"];
-        stageData.attack = stage["attack"];
-        for (const auto &ability : stage["abilities"])
-            stageData.abilities.push_back(StringToAbility(ability));
+        stageData.level = stage.value("level", 0);
+        stageData.health = stage.value("health", 0);
+        stageData.attack = stage.value("attack", 0);
 
-        for (const auto &effect : stage["effects"]) {
-            if (!effect.is_object()) {
-                continue;
+        if (stage.contains("abilities") && stage["abilities"].is_array()) {
+            for (const auto &ability : stage["abilities"]) {
+                stageData.abilities.push_back(StringToAbility(ability));
             }
+        }
 
-            EffectData effectData = ParseEffect(effect);
-            stageData.effects.push_back(effectData);
+        if (stage.contains("effects") && stage["effects"].is_array()) {
+            for (const auto &effect : stage["effects"]) {
+                if (!effect.is_object()) {
+                    continue;
+                }
+                stageData.effects.push_back(ParseEffect(effect));
+            }
         }
 
         data.stages.push_back(stageData);
@@ -61,23 +80,23 @@ CreatureData ParseCreature(const json &creature) {
     return data;
 }
 
-SpellData ParseSpell(const json &spell) {
+SpellData CardParser::ParseSpell(const json &spell) {
     SpellData data;
 
-    data.id = spell["id"];
-    data.name = spell["display_name"];
-    data.type = StringToCardType(spell["type"]);
-    data.rarity = StringToRarity(spell["rarity"]);
-    data.manaCost = spell["mana"];
-    data.description = spell["description"];
+    GenericData generic = ParseGeneric(spell);
+    static_cast<GenericData &>(data) = generic;
+
+    data.type = StringToCardType(spell.value("type", std::string("SPELL")));
+
+    if (!spell.contains("effects") || !spell["effects"].is_array()) {
+        return data;
+    }
 
     for (const auto &effect : spell["effects"]) {
         if (!effect.is_object()) {
             continue;
         }
-
-        EffectData effectData = ParseEffect(effect);
-        data.effects.push_back(effectData);
+        data.effects.push_back(ParseEffect(effect));
     }
 
     return data;

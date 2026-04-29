@@ -106,6 +106,8 @@ class SceneBattle : public GameWorld {
                       bool enabled = true) const;
 
   public:
+    SDL_Renderer *renderer = nullptr;
+
     SceneBattle();
     ~SceneBattle() override;
 
@@ -113,7 +115,6 @@ class SceneBattle : public GameWorld {
     void HandleInput(SDL_Event &e) override;
     void Update(float dt) override;
     void Render(SDL_Renderer *renderer) override;
-
-    void StartBattle(Player *state);
+    void StartBattle(Player *state, SDL_Renderer *renderer);
     void DrawCards(int amount);
 };

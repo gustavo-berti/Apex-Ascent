@@ -46,13 +46,15 @@ void SceneBattle::Initialize() {
 //  StartBattle
 // ═══════════════════════════════════════════════════════════════════
 
-void SceneBattle::StartBattle(Player *playerState) {
+void SceneBattle::StartBattle(Player *playerState, SDL_Renderer *renderer) {
     if (!SetCurrentPlayerState(playerState)) return;
 
     ResetBattleDeckState();
     BuildDrawPileFromPlayerDeck();
     ShuffleDrawPile();
     DrawCards(5);
+
+    this->renderer = renderer;
 
     srand(static_cast<unsigned>(SDL_GetTicks()));
     turnManager.RollForFirstTurn();
@@ -703,6 +705,8 @@ void SceneBattle::DrawCards(int amount) {
             hand.push_back(card);
             std::cout << "Carta comprada: " << card->GetName() << std::endl;
         }
+
+        card->LoadTexture(renderer);
     }
     OrganizeZone(hand, playerHandZone);
 }

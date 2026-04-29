@@ -9,16 +9,14 @@ GameManager::GameManager() {
     isRunning = false;
 }
 
-GameManager::~GameManager() {
-    Clean();
+GameManager::~GameManager() { Clean(); }
+
+bool GameManager::IsPointInsideRect(int x, int y, const SDL_Rect &rect) {
+    return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
 }
 
-bool GameManager::IsPointInsideRect(int x, int y, const SDL_Rect& rect) {
-    return x >= rect.x && x <= rect.x + rect.w &&
-           y >= rect.y && y <= rect.y + rect.h;
-}
-
-bool GameManager::Initialize(const char* title, int x, int y, int width, int height, bool fullscreen) {
+bool GameManager::Initialize(const char *title, int x, int y, int width, int height,
+                             bool fullscreen) {
     int flags = 0;
     if (fullscreen) {
         flags = SDL_WINDOW_FULLSCREEN_DESKTOP;
@@ -37,10 +35,10 @@ bool GameManager::Initialize(const char* title, int x, int y, int width, int hei
         }
 
         isRunning = true;
-        
-        SceneBattle* battleScene = new SceneBattle();
+
+        SceneBattle *battleScene = new SceneBattle();
         battleScene->Initialize();
-        battleScene->StartBattle(&player);
+        battleScene->StartBattle(&player, renderer);
         currentWorld = battleScene;
         return true;
     } else {
@@ -59,39 +57,39 @@ void GameManager::Run() {
 
         HandleEvents();
         Update();
-        
+
         if (currentWorld) currentWorld->Update(dt);
-        
+
         Render();
     }
 }
 
 void GameManager::HandleEvents() {
-SDL_Event event;
-    
+    SDL_Event event;
+
     while (SDL_PollEvent(&event)) {
-        
+
         switch (event.type) {
-            case SDL_QUIT:
-                isRunning = false;
-                break;
-            case SDL_KEYDOWN:
-                if (event.key.keysym.sym == SDLK_F11) {
+        case SDL_QUIT:
+            isRunning = false;
+            break;
+        case SDL_KEYDOWN:
+            if (event.key.keysym.sym == SDLK_F11) {
+                ToggleFullscreen();
+            }
+
+            if (event.key.keysym.sym == SDLK_ESCAPE) {
+                Uint32 flags = SDL_GetWindowFlags(window);
+
+                if (flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
                     ToggleFullscreen();
+                } else {
+                    isRunning = false;
                 }
-
-                if (event.key.keysym.sym == SDLK_ESCAPE) {
-                    Uint32 flags = SDL_GetWindowFlags(window);
-
-                    if (flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
-                        ToggleFullscreen(); 
-                    } else {
-                        isRunning = false; 
-                    }
-                }
-                break;
-            default:
-                break;
+            }
+            break;
+        default:
+            break;
         }
 
         if (currentWorld != nullptr) {

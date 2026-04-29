@@ -18,12 +18,12 @@ bool CardDatabase::LoadFromJson(const std::string &filepath) {
     file >> j;
 
     for (const auto &creature : j["creatures"]) {
-        CreatureData data = ParseCreature(creature);
+        CreatureData data = CardParser::ParseCreature(creature);
         creatureCards[data.id] = data;
     }
 
     for (const auto &spell : j["spells"]) {
-        SpellData data = ParseSpell(spell);
+        SpellData data = CardParser::ParseSpell(spell);
         spellCards[data.id] = data;
     }
 

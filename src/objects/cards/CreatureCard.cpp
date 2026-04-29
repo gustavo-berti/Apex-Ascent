@@ -1,18 +1,25 @@
 #include "CreatureCard.hpp"
 
 CreatureCard::CreatureCard(const CreatureData *data, int x, int y)
-    : Card(data->name, data->manaCost, data->rarity, "", x, y), dataRef(data) {
+    : Card(data->name, data->manaCost, data->rarity, data->imagePath, x, y), dataRef(data) {
     this->stage = 1;
     this->xpPoints = 0;
 
-    if (!dataRef->stages.empty()) {
-        const StageData &statusIniciais = dataRef->stages[0];
+    this->attack = 0;
+    this->health = 0;
 
-        this->attack = statusIniciais.attack;
-        this->health = statusIniciais.health;
-    } else {
-        this->attack = 0;
-        this->health = 0;
+    for (const StageData &stageData : dataRef->stages) {
+        if (stageData.level == this->stage) {
+            this->attack = stageData.attack;
+            this->health = stageData.health;
+            return;
+        }
+    }
+
+    if (!dataRef->stages.empty()) {
+        const StageData &fallback = dataRef->stages.front();
+        this->attack = fallback.attack;
+        this->health = fallback.health;
     }
 }
 
