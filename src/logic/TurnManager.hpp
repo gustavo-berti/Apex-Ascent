@@ -5,18 +5,18 @@
 enum class TurnOwner { PLAYER, OPPONENT };
 
 enum class BattlePhase {
-    TURN_START,
-    MAIN,
-    COMBAT,
-    SECOND_MAIN,
+    TURN_START,  // Automático: restaura/incrementa mana, compra carta
+    MAIN,        // Fase Principal: baixar criaturas e magias
+    COMBAT,      // Fase de Combate: atacar com criaturas
+    SECOND_MAIN, // Fase Secundária: igual à principal, sem compra
 };
 
 enum class CombatStep {
     NONE,
-    DECLARE_ATTACKERS,
-    ATTACK_MAGIC,
-    DECLARE_DEFENDERS,
-    RESOLUTION,
+    DECLARE_ATTACKERS, // Selecionar criaturas atacantes (ou passar)
+    ATTACK_MAGIC,      // Magia do atacante; pode cancelar o ataque aqui
+    DECLARE_DEFENDERS, // Oponente defende (automático por enquanto)
+    RESOLUTION,        // Cálculo do combate (implementar depois)
 };
 
 class TurnManager {
@@ -24,6 +24,9 @@ class TurnManager {
     TurnOwner currentOwner;
     BattlePhase currentPhase;
     CombatStep combatStep;
+    TurnOwner firstOwner;
+    int playerTurnCount = 0;
+    int opponentTurnCount = 0;
 
     std::function<void(TurnOwner, BattlePhase)> onPhaseChanged;
     std::function<void(TurnOwner)> onTurnChanged;
@@ -31,6 +34,13 @@ class TurnManager {
 
     void SetPhase(BattlePhase phase) {
         currentPhase = phase;
+
+        if (phase == BattlePhase::TURN_START) {
+            if (currentOwner == TurnOwner::PLAYER)
+                ++playerTurnCount;
+            else
+                ++opponentTurnCount;
+        }
         if (onPhaseChanged) onPhaseChanged(currentOwner, currentPhase);
     }
 
@@ -42,24 +52,26 @@ class TurnManager {
   public:
     TurnManager()
         : currentOwner(TurnOwner::PLAYER), currentPhase(BattlePhase::TURN_START),
-          combatStep(CombatStep::NONE) {}
+          combatStep(CombatStep::NONE), firstOwner(TurnOwner::PLAYER) {}
 
     // ── Inicialização ─────────────────────────────────────────────
     void RollForFirstTurn() {
-        currentOwner = (rand() % 2 == 0) ? TurnOwner::PLAYER : TurnOwner::OPPONENT;
+        firstOwner = (rand() % 2 == 0) ? TurnOwner::PLAYER : TurnOwner::OPPONENT;
+        currentOwner = firstOwner;
         currentPhase = BattlePhase::TURN_START;
         combatStep = CombatStep::NONE;
+        playerTurnCount = (firstOwner == TurnOwner::PLAYER) ? 1 : 0;
+        opponentTurnCount = (firstOwner == TurnOwner::OPPONENT) ? 1 : 0;
     }
 
+    // ── Callbacks ─────────────────────────────────────────────────
     void SetOnPhaseChanged(std::function<void(TurnOwner, BattlePhase)> cb) { onPhaseChanged = cb; }
     void SetOnTurnChanged(std::function<void(TurnOwner)> cb) { onTurnChanged = cb; }
     void SetOnCombatStepChanged(std::function<void(CombatStep)> cb) { onCombatStepChanged = cb; }
 
-    // ── Avançar fase (botão "Passar Fase / Turno") ────────────────
-    // Retorna false quando o turno passou para o outro lado.
+    // ── Avançar fase ─────────────────────────────────────────────
     bool AdvancePhase() {
         switch (currentPhase) {
-
         case BattlePhase::TURN_START:
             SetPhase(BattlePhase::MAIN);
             return true;
@@ -70,9 +82,6 @@ class TurnManager {
             return true;
 
         case BattlePhase::COMBAT:
-            // A fase de combate avança internamente via AdvanceCombatStep().
-            // AdvancePhase() só é chamado aqui quando o combate já terminou
-            // (CombatStep::NONE) — o jogador escolheu não atacar ou a resolução acabou.
             SetPhase(BattlePhase::SECOND_MAIN);
             SetCombatStep(CombatStep::NONE);
             return true;
@@ -80,7 +89,7 @@ class TurnManager {
         case BattlePhase::SECOND_MAIN:
             currentOwner =
                 (currentOwner == TurnOwner::PLAYER) ? TurnOwner::OPPONENT : TurnOwner::PLAYER;
-            SetPhase(BattlePhase::TURN_START);
+            SetPhase(BattlePhase::TURN_START); // já incrementa o contador
             SetCombatStep(CombatStep::NONE);
             if (onTurnChanged) onTurnChanged(currentOwner);
             return false;
@@ -89,25 +98,20 @@ class TurnManager {
     }
 
     // ── Avançar sub-passo de combate ──────────────────────────────
-    // Retorna false quando o combate terminou — SceneBattle deve chamar AdvancePhase().
     bool AdvanceCombatStep() {
         switch (combatStep) {
         case CombatStep::DECLARE_ATTACKERS:
             SetCombatStep(CombatStep::ATTACK_MAGIC);
             return true;
-
         case CombatStep::ATTACK_MAGIC:
             SetCombatStep(CombatStep::DECLARE_DEFENDERS);
             return true;
-
         case CombatStep::DECLARE_DEFENDERS:
             SetCombatStep(CombatStep::RESOLUTION);
             return true;
-
         case CombatStep::RESOLUTION:
             SetCombatStep(CombatStep::NONE);
-            return false; // combate encerrado
-
+            return false;
         default:
             return false;
         }
@@ -117,7 +121,25 @@ class TurnManager {
     TurnOwner GetOwner() const { return currentOwner; }
     BattlePhase GetPhase() const { return currentPhase; }
     CombatStep GetCombatStep() const { return combatStep; }
+    TurnOwner GetFirstOwner() const { return firstOwner; }
     bool IsPlayerTurn() const { return currentOwner == TurnOwner::PLAYER; }
+    int GetPlayerTurnCount() const { return playerTurnCount; }
+    int GetOpponentTurnCount() const { return opponentTurnCount; }
+
+    bool IsFirstTurnOf(TurnOwner owner) const {
+        return owner == TurnOwner::PLAYER ? playerTurnCount == 1 : opponentTurnCount == 1;
+    }
+
+    bool ShouldGainManaThisTurn() const {
+        if (currentOwner == firstOwner && IsFirstTurnOf(currentOwner)) return false;
+        return true;
+    }
+
+    bool ShouldDrawThisTurn() const { return ShouldGainManaThisTurn(); }
+
+    bool CanAttackThisTurn() const {
+        return currentOwner == TurnOwner::PLAYER ? playerTurnCount >= 2 : opponentTurnCount >= 2;
+    }
 
     std::string GetOwnerName() const {
         return currentOwner == TurnOwner::PLAYER ? "Jogador" : "Oponente";

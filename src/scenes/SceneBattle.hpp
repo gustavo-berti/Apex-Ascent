@@ -18,15 +18,18 @@ class SceneBattle : public GameWorld {
     SDL_Rect playerHandZone;
 
     // ── Botões ────────────────────────────────────────────────────
-    SDL_Rect btnNextPhase; // "Passar Fase / Confirmar / Passar Turno"
-    SDL_Rect btnAttack;    // Aparece quando há criaturas no campo de batalha
-    SDL_Rect btnCancel;    // Cancela o ataque declarado (acima do btnNextPhase)
+    SDL_Rect btnNextPhase;
+    SDL_Rect btnAttack;
+    SDL_Rect btnCancel;
 
     // ── Estado do jogo ────────────────────────────────────────────
     Player *currentState = nullptr;
     TurnManager turnManager;
     CardDatabase cardDatabase;
     Card *draggedCard = nullptr;
+
+    // ── Mana do oponente (simulado) ───────────────────────────────
+    ManaState opponentMana;
 
     // ── Pilhas de cartas ──────────────────────────────────────────
     std::vector<Card *> drawPile;
@@ -40,9 +43,8 @@ class SceneBattle : public GameWorld {
     std::vector<Card *> enemyBattleCards;
 
     // ── Estado do combate ─────────────────────────────────────────
-    // Cartas selecionadas como atacantes (subset de playerBattleCards)
     std::vector<Card *> selectedAttackers;
-    bool attackDeclared = false; // true após confirmar o ataque
+    bool attackDeclared = false;
 
     // ── Callbacks do TurnManager ──────────────────────────────────
     void OnPhaseChanged(TurnOwner owner, BattlePhase phase);
@@ -52,6 +54,10 @@ class SceneBattle : public GameWorld {
     // ── Lógica de início de turno ─────────────────────────────────
     void HandleTurnStart();
     void RunOpponentTurn();
+
+    // ── Mana ──────────────────────────────────────────────────────
+    ManaState &CurrentMana();
+    bool SpendPlayerMana(int cost, const std::string &cardName);
 
     // ── Lógica da fase de combate ─────────────────────────────────
     void HandleAttackButton();
@@ -65,11 +71,11 @@ class SceneBattle : public GameWorld {
     void ReturnSelectedAttackersToPreparation();
     bool RemoveRightmostPreparationCard();
 
-    // ── Helpers de consulta de estado ────────────────────────────
-    bool CanPlayCreature() const;  // MAIN ou SECOND_MAIN
-    bool CanPlaySpell() const;     // MAIN, SECOND_MAIN ou ATTACK_MAGIC / DECLARE_DEFENDERS
-    bool CanDeclareAttack() const; // COMBAT + DECLARE_ATTACKERS + há criaturas no campo
-    bool ShowAttackButton() const; // mostra botão de atacar
+    // ── Helpers de estado ─────────────────────────────────────────
+    bool CanPlayCreature() const;
+    bool CanPlaySpell() const;
+    bool CanDeclareAttack() const;
+    bool ShowAttackButton() const;
 
     // ── Input ─────────────────────────────────────────────────────
     bool HandleNextPhaseClick(const SDL_Event &e);
@@ -90,11 +96,12 @@ class SceneBattle : public GameWorld {
     void BuildDrawPileFromPlayerDeck();
     void ShuffleDrawPile();
 
-    // ── Render helpers ────────────────────────────────────────────
+    // ── Render ────────────────────────────────────────────────────
     void RenderZones(SDL_Renderer *renderer) const;
     void RenderButtons(SDL_Renderer *renderer) const;
     void RenderCards(SDL_Renderer *renderer) const;
     void RenderHUD(SDL_Renderer *renderer) const;
+    void RenderMana(SDL_Renderer *renderer) const; // <<< NOVO
     void RenderButton(SDL_Renderer *renderer, SDL_Rect r, Uint8 red, Uint8 grn, Uint8 blu,
                       bool enabled = true) const;
 
