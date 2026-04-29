@@ -6,6 +6,15 @@
 #include <unordered_map>
 #include <vector>
 
+struct GenericData {
+    int id;
+    int manaCost;
+    Rarity rarity;
+    std::string name;
+    std::string description;
+    std::string imagePath;
+};
+
 struct StageData {
     int level;
     int health;
@@ -14,23 +23,13 @@ struct StageData {
     std::vector<EffectData> effects;
 };
 
-struct CreatureData {
-    int id;
-    int manaCost;
+struct CreatureData : public GenericData {
     Race race;
-    Rarity rarity;
-    std::string name;
-    std::string description;
     std::vector<StageData> stages;
 };
 
-struct SpellData {
-    int id;
-    int manaCost;
+struct SpellData : public GenericData {
     CardType type;
-    Rarity rarity;
-    std::string name;
-    std::string description;
     std::vector<EffectData> effects;
 };
 

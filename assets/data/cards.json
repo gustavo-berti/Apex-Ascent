@@ -3,6 +3,7 @@
         {
             "id": 1,
             "display_name": "Estressadinha",
+            "image_path": "assets/images/cards/creatures/pixie/estressadinha.png",
             "race": "PIXIE",
             "rarity": "COMMON",
             "description": "Sempre arrumando confusão com quem a chama de baixinha.",
@@ -34,6 +35,7 @@
         {
             "id": 21,
             "display_name": "Asas Benevolentes",
+            "image_path": "assets/images/cards/creatures/pixie/asas_benevolentes.png",
             "race": "PIXIE",
             "rarity": "RARE",
             "mana": 3,
@@ -95,6 +97,7 @@
         {
             "id": 24,
             "display_name": "Venenoso",
+            "image_path": "assets/images/cards/creatures/dragon/venenoso.png",
             "race": "DRAGON",
             "rarity": "RARE",
             "mana": 5,
@@ -156,6 +159,7 @@
         {
             "id": 28,
             "display_name": "Punho Veloz",
+            "image_path": "assets/images/cards/creatures/automat/punho_veloz.png",
             "race": "AUTOMAT",
             "rarity": "UNCOMMON",
             "mana": 2,
@@ -197,6 +201,7 @@
             "rarity": "EPIC",
             "mana": 2,
             "description": "Ninguém entende porque foi criado um bicho que simplesmente só vai atrás de lixo",
+            "image_path": "assets/images/cards/creatures/automat/rato_mecanico.png",
             "stages": [
                 {
                     "level": 0,

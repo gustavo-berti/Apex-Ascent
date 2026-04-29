@@ -15,7 +15,7 @@ void SceneBattle::Initialize() {
 
     if (!cardDatabase.LoadFromJson("assets/data/cards.json"))
         std::cerr << "Falha ao carregar cards.json" << std::endl;
-    
+
     // ── Layout do tabuleiro (1600x900) ────────────────────────────
     //
     //  [enemyPreparationZone ]   y=25
@@ -49,12 +49,14 @@ void SceneBattle::Initialize() {
 //  Começo de Batalha
 // ═══════════════════════════════════════════════════════════════════
 
-void SceneBattle::StartBattle(Player *playerState) {
+void SceneBattle::StartBattle(Player *playerState, SDL_Renderer *renderer) {
     if (!SetCurrentPlayerState(playerState)) return;
 
     ResetBattleDeckState();
     BuildDrawPileFromPlayerDeck();
     ShuffleDrawPile();
+
+    this->renderer = renderer;
 
     srand(static_cast<unsigned>(SDL_GetTicks()));
     turnManager.RollForFirstTurn();
@@ -624,6 +626,8 @@ void SceneBattle::DrawCards(int amount) {
             hand.push_back(card);
             std::cout << "Carta comprada: " << card->GetName() << std::endl;
         }
+
+        card->LoadTexture(renderer);
     }
     OrganizeZone(hand, playerHandZone);
 }

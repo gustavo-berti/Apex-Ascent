@@ -99,14 +99,15 @@ class SceneBattle : public GameWorld {
                       bool enabled = true) const;
 
   public:
+    SDL_Renderer *renderer = nullptr;
+
     SceneBattle();
     ~SceneBattle() override;
 
     void Initialize() override;
     void HandleInput(SDL_Event &e) override;
     void Update(float dt) override;
-    void Render(SDL_Renderer *r) override;
-
-    void StartBattle(Player *state);
+    void Render(SDL_Renderer *renderer) override;
+    void StartBattle(Player *state, SDL_Renderer *renderer);
     void DrawCards(int amount);
 };
