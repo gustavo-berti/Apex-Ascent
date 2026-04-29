@@ -261,6 +261,11 @@ bool SceneBattle::MoveCardFromBattleToPreparation(Card *card) {
     auto it = std::find(playerBattleCards.begin(), playerBattleCards.end(), card);
     if (it == playerBattleCards.end()) return false;
     if (playerPreparationCards.size() >= 6) {
+        // Só permite remover durante RESOLUTION em COMBAT phase
+        if (turnManager.GetPhase() != BattlePhase::COMBAT || 
+            turnManager.GetCombatStep() != CombatStep::RESOLUTION) {
+            return false;  // Não pode retornar atacante se preparação está cheia fora de RESOLUTION
+        }
         if (!RemoveRightmostPreparationCard()) return false;
     }
     playerBattleCards.erase(it);
@@ -601,8 +606,15 @@ bool SceneBattle::AddCardToPlayerBattle(Card *card) {
 
 bool SceneBattle::AddCardToPlayerPreparation(Card *card) {
     if (playerPreparationCards.size() >= 6) {
-        if (!RemoveRightmostPreparationCard()) {
+        // Só permite remover durante RESOLUTION em COMBAT phase (atacantes voltando)
+        // Fora disso, bloqueia a adição normal de cartas
+        if (turnManager.GetPhase() != BattlePhase::COMBAT || 
+            turnManager.GetCombatStep() != CombatStep::RESOLUTION) {
             std::cout << "Campo de preparacao cheio! (max 6)" << std::endl;
+            return false;  // Bloqueia adição quando cheio (fora de RESOLUTION)
+        }
+        if (!RemoveRightmostPreparationCard()) {
+            std::cout << "Falha ao remover carta do campo de preparacao." << std::endl;
             return false;
         }
     }

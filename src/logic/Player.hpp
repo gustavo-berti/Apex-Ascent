@@ -40,7 +40,7 @@ struct Player {
     std::vector<std::string> masterDeck;
 
     Player() {
-        masterDeck = {"23", "1", "38", "28", "24", "21", "1", "28", "1", "38"};
+        masterDeck = {"1", "38", "28", "24", "21", "1", "28", "1", "38"};
     }
 
     int  GetMaxHandSize()        const { return MAX_HAND_SIZE; }
