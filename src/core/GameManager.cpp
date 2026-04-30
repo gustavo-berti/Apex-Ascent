@@ -1,5 +1,5 @@
 #include "GameManager.hpp"
-#include "../scenes/SceneBattle.hpp"
+#include "../scenes/SceneMenu.hpp"
 #include <iostream>
 
 GameManager::GameManager() {
@@ -36,15 +36,21 @@ bool GameManager::Initialize(const char *title, int x, int y, int width, int hei
 
         isRunning = true;
 
-        SceneBattle *battleScene = new SceneBattle();
-        battleScene->Initialize();
-        battleScene->StartBattle(&player, renderer);
-        currentWorld = battleScene;
+        SceneMenu *menu = new SceneMenu(*this);
+        menu->Initialize();
+        currentWorld = menu;
         return true;
     } else {
         isRunning = false;
         return false;
     }
+}
+
+void GameManager::ChangeScene(GameWorld *newWorld) {
+    if (currentWorld) {
+        delete currentWorld;
+    }
+    currentWorld = newWorld;
 }
 
 void GameManager::Run() {
