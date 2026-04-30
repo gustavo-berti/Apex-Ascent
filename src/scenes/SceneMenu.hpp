@@ -15,13 +15,16 @@ class SceneMenu : public GameWorld {
   private:
     GameManager &gameManager;
     std::vector<MenuButton> buttons;
+    int hoveredIndex = -1;
 
     bool IsButtonClicked(const MenuButton &btn, const SDL_Event &event) const;
-    void RenderButton(SDL_Renderer *renderer, const MenuButton &btn) const;
+    void RenderButton(SDL_Renderer *renderer, const MenuButton &btn, bool hovered) const;
+    void RenderText(SDL_Renderer *renderer, const std::string &text, int x, int y,
+                    SDL_Color color) const;
 
   public:
     SceneMenu(GameManager &manager);
-    ~SceneMenu() override = default;
+    ~SceneMenu() override;
 
     void Initialize() override;
     void HandleInput(SDL_Event &event) override;
