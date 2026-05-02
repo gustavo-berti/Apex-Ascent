@@ -1,7 +1,8 @@
 CXX = g++
 CXXFLAGS = -std=c++23 -Wall -ggdb -MMD -MP \
            -I./libs/my-lib/include -I./libs -I./src \
-           `pkg-config --cflags sdl2 SDL2_image SDL2_ttf SDL2_mixer`
+           `pkg-config --cflags sdl2 SDL2_image SDL2_ttf SDL2_mixer` \
+           -fno-sanitize=address -fno-sanitize=undefined
 
 DEPENDS = $(OBJECTS:.o=.d)
 -include $(DEPENDS)
@@ -20,6 +21,8 @@ SOURCES = ./src/main.cpp ./src/core/GameManager.cpp \
 OBJECTS = $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(SOURCES))
 
 all: $(TARGET)
+
+rebuild: clean all
 
 $(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(TARGET) $(LIBS)
