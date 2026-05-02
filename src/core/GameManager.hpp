@@ -2,11 +2,13 @@
 #include <SDL2/SDL.h>
 #include "GameWorld.hpp"
 #include "../logic/Player.hpp"
+#include "../logic/Opponent.hpp"
 
 class GameManager {
 private:
     bool isRunning;
     Player player;
+    Opponent opponent;
     SDL_Window* window;
     SDL_Renderer* renderer;
     GameWorld* currentWorld;
