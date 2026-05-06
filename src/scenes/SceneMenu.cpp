@@ -5,28 +5,56 @@
 #include <iostream>
 
 TTF_Font *font = nullptr;
+TTF_Font *fontTitle = nullptr;
 
 SceneMenu::SceneMenu(GameManager &gm) : gameManager(gm) {}
 
 SceneMenu::~SceneMenu() {
+    if (background) {
+        SDL_DestroyTexture(background);
+        background = nullptr;
+    }
     if (font) {
         TTF_CloseFont(font);
         font = nullptr;
     }
+    if (fontTitle) {
+        TTF_CloseFont(fontTitle);
+        fontTitle = nullptr;
+    }
 }
 
-void SceneMenu::Initialize() {
-    TTF_Init();
-    font = TTF_OpenFont("assets/fonts/frozen.ttf", 24);
-    if (!font) std::cerr << "Erro ao carregar fonte: " << TTF_GetError() << std::endl;
+void SceneMenu::Initialize(SDL_Renderer *renderer) {
+    SDL_Surface *surface = IMG_Load("assets/images/start_menu.png");
+    if (!surface) {
+        std::cerr << "Erro ao carregar fundo: " << IMG_GetError() << std::endl;
+    } else {
+        background = SDL_CreateTextureFromSurface(renderer, surface);
+        SDL_FreeSurface(surface);
+    }
 
-    int centerX = 1280 / 2;
+    int w, h;
+    SDL_RenderGetLogicalSize(renderer, &w, &h);
+    if (w == 0 || h == 0) SDL_GetRendererOutputSize(renderer, &w, &h);
+
+    int btnW = 200;
+    int btnH = 50;
+    int gap = 30;
+    int margin = 40;
+    int stackHeight = (btnH * 3) + (gap * 2);
+
+    int startX = w - margin - btnW;
+    int startY = h - margin - stackHeight;
 
     buttons = {
-        {{centerX - 100, 250, 200, 50}, "Começar Jogo"},
-        {{centerX - 100, 330, 200, 50}, "Coleção"},
-        {{centerX - 100, 410, 200, 50}, "Sair"},
+        {{startX, startY, btnW, btnH}, "Começar Jogo"},
+        {{startX, startY + gap + btnH, btnW, btnH}, "Coleção"},
+        {{startX, startY + (gap + btnH) * 2, btnW, btnH}, "Sair"},
     };
+
+    TTF_Init();
+    font = TTF_OpenFont("assets/fonts/frozen.ttf", 24);
+    fontTitle = TTF_OpenFont("assets/fonts/frozen.ttf", 60);
 }
 
 bool SceneMenu::IsButtonClicked(const MenuButton &btn, const SDL_Event &event) const {
@@ -47,7 +75,7 @@ void SceneMenu::HandleInput(SDL_Event &event) {
 
     if (IsButtonClicked(buttons[0], event)) {
         SceneBattle *battle = new SceneBattle();
-        battle->Initialize();
+        battle->Initialize(gameManager.GetRenderer());
         battle->StartBattle(&gameManager.GetPlayer(), gameManager.GetRenderer());
         gameManager.ChangeScene(battle);
     }
@@ -66,8 +94,27 @@ void SceneMenu::HandleInput(SDL_Event &event) {
 void SceneMenu::Update(float dt) {}
 
 void SceneMenu::Render(SDL_Renderer *renderer) {
-    SDL_SetRenderDrawColor(renderer, 20, 20, 40, 255);
-    SDL_RenderClear(renderer);
+    int w, h;
+    SDL_RenderGetLogicalSize(renderer, &w, &h);
+    if (w == 0 || h == 0) SDL_GetRendererOutputSize(renderer, &w, &h);
+
+    if (background) {
+        SDL_Rect dst = {0, 0, w, h};
+        SDL_RenderCopy(renderer, background, nullptr, &dst);
+    } else {
+        SDL_SetRenderDrawColor(renderer, 20, 20, 40, 255);
+        SDL_RenderClear(renderer);
+    }
+
+    if (fontTitle) {
+        const std::string title = "Apex Ascent";
+        int titleW, titleH;
+        TTF_SizeUTF8(fontTitle, title.c_str(), &titleW, &titleH);
+        int titleX = (w - titleW) / 2;
+        int titleY = 50;
+        SDL_Color white = {255, 255, 255, 255};
+        RenderText(renderer, title, titleX, titleY, white, fontTitle);
+    }
 
     for (int i = 0; i < (int)buttons.size(); i++)
         RenderButton(renderer, buttons[i], i == hoveredIndex);
@@ -91,12 +138,12 @@ void SceneMenu::RenderButton(SDL_Renderer *renderer, const MenuButton &btn, bool
         int textY = btn.rect.y + (btn.rect.h - textH) / 2;
 
         SDL_Color white = {255, 255, 255, 255};
-        RenderText(renderer, btn.label, textX, textY, white);
+        RenderText(renderer, btn.label, textX, textY, white, font);
     }
 }
 
 void SceneMenu::RenderText(SDL_Renderer *renderer, const std::string &text, int x, int y,
-                           SDL_Color color) const {
+                           SDL_Color color, TTF_Font *font) const {
     if (!font) return;
 
     SDL_Surface *surface = TTF_RenderUTF8_Blended(font, text.c_str(), color);
