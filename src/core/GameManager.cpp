@@ -37,7 +37,7 @@ bool GameManager::Initialize(const char *title, int x, int y, int width, int hei
         isRunning = true;
 
         SceneMenu *menu = new SceneMenu(*this);
-        menu->Initialize();
+        menu->Initialize(renderer);
         currentWorld = menu;
         return true;
     } else {
