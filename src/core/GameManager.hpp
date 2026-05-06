@@ -1,4 +1,5 @@
 #pragma once
+#include "../logic/Opponent.hpp"
 #include "../logic/Player.hpp"
 #include "GameWorld.hpp"
 #include <SDL2/SDL.h>
@@ -7,6 +8,7 @@ class GameManager {
   private:
     bool isRunning;
     Player player;
+    Opponent opponent;
     SDL_Window *window;
     SDL_Renderer *renderer;
     GameWorld *currentWorld;
@@ -26,4 +28,5 @@ class GameManager {
     bool Running() { return isRunning; }
     SDL_Renderer *GetRenderer() const { return renderer; }
     Player &GetPlayer() { return player; }
+    Opponent &GetOpponent() { return opponent; }
 };

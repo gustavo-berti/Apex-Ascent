@@ -1,5 +1,6 @@
 #include "GameManager.hpp"
 #include "../scenes/SceneMenu.hpp"
+#include <SDL2/SDL_ttf.h>
 #include <iostream>
 
 GameManager::GameManager() {
@@ -23,6 +24,11 @@ bool GameManager::Initialize(const char *title, int x, int y, int width, int hei
     }
 
     if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
+        // Inicializa SDL_ttf
+        if (TTF_Init() != 0) {
+            std::cerr << "Falha ao inicializar SDL_ttf: " << TTF_GetError() << std::endl;
+        }
+
         window = SDL_CreateWindow(title, x, y, width, height, flags);
         if (window) {
             std::cout << "Janela criada!" << std::endl;
@@ -35,6 +41,7 @@ bool GameManager::Initialize(const char *title, int x, int y, int width, int hei
         }
 
         isRunning = true;
+        opponent.SetGuardian(false);
 
         SceneMenu *menu = new SceneMenu(*this);
         menu->Initialize(renderer);
@@ -134,6 +141,7 @@ void GameManager::Clean() {
     }
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
+    TTF_Quit(); // Finaliza SDL_ttf
     SDL_Quit();
     std::cout << "Jogo finalizado." << std::endl;
 }

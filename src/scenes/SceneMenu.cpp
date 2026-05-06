@@ -76,7 +76,8 @@ void SceneMenu::HandleInput(SDL_Event &event) {
     if (IsButtonClicked(buttons[0], event)) {
         SceneBattle *battle = new SceneBattle();
         battle->Initialize(gameManager.GetRenderer());
-        battle->StartBattle(&gameManager.GetPlayer(), gameManager.GetRenderer());
+        battle->StartBattle(&gameManager.GetPlayer(), &gameManager.GetOpponent(),
+                            gameManager.GetRenderer());
         gameManager.ChangeScene(battle);
     }
     if (IsButtonClicked(buttons[1], event)) {
