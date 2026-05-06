@@ -95,17 +95,6 @@ void SceneBattle::StartBattle(Player *playerState, Opponent *opp, SDL_Renderer *
     std::cout << "[BATALHA] Oponente e " << (opponent->isGuardian ? "GUARDIAO" : "normal")
               << " | HP: " << opponent->currentHealth << "/" << opponent->maxHealth << std::endl;
 
-    // Quem perdeu o sorteio recebe +1 mana de compensação
-    if (turnManager.GetFirstOwner() == TurnOwner::PLAYER) {
-        opponent->mana.total = 2;
-        opponent->mana.current = 2;
-        std::cout << "[MANA] Oponente recebeu +1 mana de compensacao." << std::endl;
-    } else {
-        currentState->mana.total = 2;
-        currentState->mana.current = 2;
-        std::cout << "[MANA] Jogador recebeu +1 mana de compensacao." << std::endl;
-    }
-
     if (turnManager.IsPlayerTurn()) {
         HandleTurnStart();
     } else {
