@@ -13,6 +13,7 @@ BUILD_DIR = build
 SOURCES = ./src/main.cpp ./src/core/GameManager.cpp \
           ./src/objects/cards/Card.cpp ./src/objects/cards/CreatureCard.cpp \
           ./src/objects/cards/SpellCard.cpp \
+          ./src/objects/ui/UIRenderUtils.cpp \
           ./libs/my-lib/src/memory-pool.cpp ./src/core/data/CardDatabase.cpp \
           ./src/core/parsers/CardParser.cpp ./src/core/enums/EnumConverter.cpp \
           ./src/logic/CardFactory.cpp ./src/scenes/SceneBattle.cpp \
