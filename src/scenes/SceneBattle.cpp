@@ -32,7 +32,7 @@ SceneBattle::~SceneBattle() {
 //  Initialize
 // ═══════════════════════════════════════════════════════════════════
 
-void SceneBattle::Initialize() {
+void SceneBattle::Initialize(SDL_Renderer *renderer) {
     std::cout << "Inicializando SceneBattle..." << std::endl;
 
     if (!cardDatabase.LoadFromJson("assets/data/cards.json"))

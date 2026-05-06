@@ -1,5 +1,5 @@
 #include "GameManager.hpp"
-#include "../scenes/SceneBattle.hpp"
+#include "../scenes/SceneMenu.hpp"
 #include <SDL2/SDL_ttf.h>
 #include <iostream>
 
@@ -43,15 +43,21 @@ bool GameManager::Initialize(const char *title, int x, int y, int width, int hei
         isRunning = true;
         opponent.SetGuardian(false);
 
-        SceneBattle *battleScene = new SceneBattle();
-        battleScene->Initialize();
-        battleScene->StartBattle(&player, &opponent, renderer);
-        currentWorld = battleScene;
+        SceneMenu *menu = new SceneMenu(*this);
+        menu->Initialize(renderer);
+        currentWorld = menu;
         return true;
     } else {
         isRunning = false;
         return false;
     }
+}
+
+void GameManager::ChangeScene(GameWorld *newWorld) {
+    if (currentWorld) {
+        delete currentWorld;
+    }
+    currentWorld = newWorld;
 }
 
 void GameManager::Run() {
@@ -135,7 +141,7 @@ void GameManager::Clean() {
     }
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
-    TTF_Quit();  // Finaliza SDL_ttf
+    TTF_Quit(); // Finaliza SDL_ttf
     SDL_Quit();
     std::cout << "Jogo finalizado." << std::endl;
 }

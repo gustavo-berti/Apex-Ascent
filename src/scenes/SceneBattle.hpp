@@ -134,7 +134,7 @@ class SceneBattle : public GameWorld {
     SceneBattle();
     ~SceneBattle() override;
 
-    void Initialize() override;
+    void Initialize(SDL_Renderer *renderer) override;
     void HandleInput(SDL_Event &e) override;
     void Update(float dt) override;
     void Render(SDL_Renderer *renderer) override;
