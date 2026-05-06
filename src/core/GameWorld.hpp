@@ -15,7 +15,7 @@ class GameWorld {
         objects.clear();
     }
 
-    virtual void Initialize() = 0;
+    virtual void Initialize(SDL_Renderer *renderer) = 0;
     virtual void HandleInput(SDL_Event &event) = 0;
     virtual void Update(float dt) = 0;
     virtual void Render(SDL_Renderer *renderer) = 0;
