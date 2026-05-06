@@ -9,8 +9,6 @@
 
 // ═══════════════════════════════════════════════════════════════════
 //  Construtor / Destrutor
-//  TurnManager é declarado antes de Board no .hpp, garantindo que
-//  board(turnManager) seja inicializado na ordem correta.
 // ═══════════════════════════════════════════════════════════════════
 
 SceneBattle::SceneBattle() : board(turnManager), draggedCard(nullptr) {}
@@ -24,6 +22,10 @@ SceneBattle::~SceneBattle() {
         TTF_CloseFont(fontSmall);
         fontSmall = nullptr;
     }
+    if (fontUI) {
+        TTF_CloseFont(fontUI);
+        fontUI = nullptr;
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -36,20 +38,16 @@ void SceneBattle::Initialize() {
     if (!cardDatabase.LoadFromJson("assets/data/cards.json"))
         std::cerr << "Falha ao carregar cards.json" << std::endl;
 
-    // Carrega a fonte TTF para a tela de vitória/derrota
-    font = TTF_OpenFont("./assets/fonts/arial.ttf", 72);
-    if (!font) {
-        std::cerr << "Falha ao carregar fonte TTF (72): " << TTF_GetError() << std::endl;
-    }
+    font = TTF_OpenFont("assets/fonts/frozen.ttf", 72);
+    fontSmall = TTF_OpenFont("assets/fonts/frozen.ttf", 28);
+    fontUI = TTF_OpenFont("assets/fonts/frozen.ttf", 32);
 
-    // Carrega a fonte pequena para HP display
-    fontSmall = TTF_OpenFont("./assets/fonts/arial.ttf", 28);
-    if (!fontSmall) {
-        std::cerr << "Falha ao carregar fonte pequena (28): " << TTF_GetError() << std::endl;
-    }
+    if (!font) std::cerr << "Falha ao carregar fonte (72): " << TTF_GetError() << std::endl;
+    if (!fontSmall) std::cerr << "Falha ao carregar fonte (28): " << TTF_GetError() << std::endl;
+    if (!fontUI) std::cerr << "Falha ao carregar frozen (32): " << TTF_GetError() << std::endl;
 
     const int boardWidth = 1000;
-    const int boardX = (1600 - boardWidth) / 2; // 300
+    const int boardX = (1600 - boardWidth) / 2;
 
     enemyPreparationZone = {boardX, 25, boardWidth, 150};
     enemyBattleZone = {boardX, 200, boardWidth, 150};
@@ -59,7 +57,7 @@ void SceneBattle::Initialize() {
 
     btnCancel = {1420, 300, 150, 50};
     btnNextPhase = {1420, 360, 150, 50};
-    btnAttack = {1420, 430, 150, 50};
+    btnAttack = {1420, 420, 150, 50};
 
     board.SetZoneRects(playerPreparationZone, playerBattleZone, enemyPreparationZone,
                        enemyBattleZone);
@@ -83,6 +81,7 @@ void SceneBattle::StartBattle(Player *playerState, Opponent *opp, SDL_Renderer *
     opponent = opp;
     this->renderer = sdlRenderer;
     outcome = BattleOutcome::ONGOING;
+    summonPending.Clear();
 
     ResetBattleState();
     BuildDrawPileFromPlayerDeck();
@@ -95,11 +94,18 @@ void SceneBattle::StartBattle(Player *playerState, Opponent *opp, SDL_Renderer *
     std::cout << "[BATALHA] Oponente e " << (opponent->isGuardian ? "GUARDIAO" : "normal")
               << " | HP: " << opponent->currentHealth << "/" << opponent->maxHealth << std::endl;
 
-    if (turnManager.IsPlayerTurn()) {
-        HandleTurnStart();
+    if (turnManager.GetFirstOwner() == TurnOwner::PLAYER) {
+        opponent->mana.total = 2;
+        opponent->mana.current = 2;
     } else {
-        RunOpponentTurn();
+        currentState->mana.total = 2;
+        currentState->mana.current = 2;
     }
+
+    if (turnManager.IsPlayerTurn())
+        HandleTurnStart();
+    else
+        RunOpponentTurn();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -109,7 +115,6 @@ void SceneBattle::StartBattle(Player *playerState, Opponent *opp, SDL_Renderer *
 void SceneBattle::OnPhaseChanged(TurnOwner owner, BattlePhase phase) {
     std::cout << "[" << turnManager.GetOwnerName() << "] " << turnManager.GetPhaseName()
               << std::endl;
-
     if (phase == BattlePhase::TURN_START && owner == TurnOwner::PLAYER) HandleTurnStart();
 }
 
@@ -123,20 +128,17 @@ void SceneBattle::OnCombatStepChanged(CombatStep step) {
 
     if (step == CombatStep::DECLARE_DEFENDERS) {
         board.ResolveDefenders();
-        turnManager.AdvanceCombatStep(); // → RESOLUTION
+        turnManager.AdvanceCombatStep();
     }
-
     if (step == CombatStep::RESOLUTION) {
-        // Board calcula dano e retorna o resultado
         CombatResult result = board.ResolveCombat(opponent->currentHealth, cardObjects);
         CheckBattleOutcome(result);
-
-        if (!IsBattleOver()) turnManager.AdvancePhase(); // COMBAT → SECOND_MAIN
+        if (!IsBattleOver()) turnManager.AdvancePhase();
     }
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  Condição de vitória / derrota
+//  Vitória / derrota
 // ═══════════════════════════════════════════════════════════════════
 
 void SceneBattle::CheckBattleOutcome(const CombatResult &result) {
@@ -145,17 +147,14 @@ void SceneBattle::CheckBattleOutcome(const CombatResult &result) {
                   << " de dano. HP: " << opponent->currentHealth << "/" << opponent->maxHealth
                   << std::endl;
     }
-
     if (opponent->IsDefeated()) {
         outcome = BattleOutcome::PLAYER_WIN;
-        std::cout << "=== JOGADOR VENCEU A BATALHA! ===" << std::endl;
+        std::cout << "=== JOGADOR VENCEU! ===" << std::endl;
         return;
     }
-
-    // Verifica derrota do jogador
     if (currentState->currentHealth <= 0) {
         outcome = BattleOutcome::PLAYER_LOSE;
-        std::cout << "=== JOGADOR PERDEU A BATALHA! ===" << std::endl;
+        std::cout << "=== JOGADOR PERDEU! ===" << std::endl;
     }
 }
 
@@ -165,33 +164,22 @@ void SceneBattle::CheckBattleOutcome(const CombatResult &result) {
 
 void SceneBattle::HandleTurnStart() {
     bool gainMana = turnManager.ShouldGainManaThisTurn();
-    bool drawCard = turnManager.ShouldDrawThisTurn();
-
     currentState->mana.OnTurnStart(gainMana);
     std::cout << "[INICIO DE TURNO] Mana: " << currentState->mana.current << "/"
-              << currentState->mana.total << (gainMana ? "" : " (1o turno, sem incremento)")
-              << std::endl;
+              << currentState->mana.total << (gainMana ? "" : " (1o turno)") << std::endl;
 
-    if (drawCard)
-        DrawCards(currentState->GetTurnStartDrawCount());
-    else
-        std::cout << "[INICIO DE TURNO] Sem compra — primeiro turno." << std::endl;
+    if (turnManager.ShouldDrawThisTurn()) DrawCards(currentState->GetTurnStartDrawCount());
 
-    turnManager.AdvancePhase(); // TURN_START → MAIN
+    turnManager.AdvancePhase();
 }
 
 void SceneBattle::RunOpponentTurn() {
-    std::cout << "[OPONENTE] Processando turno automaticamente..." << std::endl;
-
-    bool gainMana = turnManager.ShouldGainManaThisTurn();
-    opponent->mana.OnTurnStart(gainMana);
-    std::cout << "[OPONENTE] Mana: " << opponent->mana.current << "/" << opponent->mana.total
-              << (gainMana ? "" : " (1o turno, sem incremento)") << std::endl;
-
-    turnManager.AdvancePhase(); // TURN_START  → MAIN
-    turnManager.AdvancePhase(); // MAIN        → COMBAT
-    turnManager.AdvancePhase(); // COMBAT      → SECOND_MAIN
-    turnManager.AdvancePhase(); // SECOND_MAIN → fim (volta ao jogador)
+    std::cout << "[OPONENTE] Turno automatico..." << std::endl;
+    opponent->mana.OnTurnStart(turnManager.ShouldGainManaThisTurn());
+    turnManager.AdvancePhase();
+    turnManager.AdvancePhase();
+    turnManager.AdvancePhase();
+    turnManager.AdvancePhase();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -208,6 +196,82 @@ bool SceneBattle::SpendPlayerMana(int cost, const std::string &cardName) {
     std::cout << "[MANA] Gastou " << cost << " em " << cardName << " ("
               << currentState->mana.current << "/" << currentState->mana.total << ")" << std::endl;
     return true;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  Invocação e sacrifício
+// ═══════════════════════════════════════════════════════════════════
+
+void SceneBattle::TrySummonCard(Card *card, std::vector<Card *>::reverse_iterator handIt) {
+    // Campo com espaço → invoca diretamente
+    if (board.playerPreparationCards.size() < 6) {
+        if (!SpendPlayerMana(card->GetManaCost(), card->GetName())) return;
+
+        if (board.AddToPlayerPreparation(card, cardObjects)) {
+            hand.erase(std::next(handIt).base());
+            RearrangeHand();
+        } else {
+            // Devolveu a mana pois o board recusou por algum motivo interno
+            currentState->mana.current += card->GetManaCost();
+        }
+        return;
+    }
+
+    std::cout << "[INVOCACAO] Campo cheio. Selecione uma carta para sacrificar." << std::endl;
+    summonPending.Begin(card);
+}
+
+void SceneBattle::ConfirmSummon() {
+    if (!summonPending.active || !summonPending.cardToSummon) {
+        CancelSummon();
+        return;
+    }
+
+    if (!summonPending.cardToSacrifice) {
+        std::cout << "[INVOCACAO] Selecione uma carta para sacrificar primeiro." << std::endl;
+        return;
+    }
+
+    Card *toSummon = summonPending.cardToSummon;
+    Card *toSacrifice = summonPending.cardToSacrifice;
+
+    if (!SpendPlayerMana(toSummon->GetManaCost(), toSummon->GetName())) {
+        CancelSummon();
+        return;
+    }
+
+    auto &prep = board.playerPreparationCards;
+    auto it = std::find(prep.begin(), prep.end(), toSacrifice);
+    if (it != prep.end()) {
+        prep.erase(it);
+        discardPile.push_back(toSacrifice);
+        std::cout << "[SACRIFICIO] " << toSacrifice->GetName() << " foi enviada ao cemiterio."
+                  << std::endl;
+    }
+
+    auto handIt = std::find(hand.begin(), hand.end(), toSummon);
+    if (handIt != hand.end()) hand.erase(handIt);
+
+    board.AddToPlayerPreparation(toSummon, cardObjects);
+    RearrangeHand();
+    summonPending.Clear();
+    std::cout << "[INVOCACAO] " << toSummon->GetName() << " invocada com sucesso." << std::endl;
+}
+
+void SceneBattle::CancelSummon() {
+    if (!summonPending.active) return;
+    std::cout << "[INVOCACAO] Invocacao cancelada. Carta permanece na mao." << std::endl;
+    summonPending.Clear();
+}
+
+// Reorganiza as cartas na mão após remoção
+void SceneBattle::RearrangeHand() {
+    int n = hand.size(), cw = 100, gap = 15;
+    int totalW = n * cw + (n - 1) * gap;
+    int startX = playerHandZone.x + (playerHandZone.w - totalW) / 2;
+    int y = playerHandZone.y + (playerHandZone.h - 140) / 2;
+    for (int i = 0; i < n; ++i)
+        hand[i]->SetPosition(startX + i * (cw + gap), y);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -234,8 +298,7 @@ bool SceneBattle::CanPlaySpell() const {
 
 void SceneBattle::HandleAttackButton() {
     if (!board.CanDeclareAttack()) return;
-    turnManager.AdvanceCombatStep(); // DECLARE_ATTACKERS → ATTACK_MAGIC
-    std::cout << "[COMBATE] Selecione atacantes e confirme (ou cancele)." << std::endl;
+    turnManager.AdvanceCombatStep();
 }
 
 void SceneBattle::HandleCancelAttack() {
@@ -246,11 +309,10 @@ void SceneBattle::HandleCancelAttack() {
 
 void SceneBattle::HandleConfirmAttack() {
     if (!board.ConfirmAttack()) {
-        turnManager.AdvancePhase(); // COMBAT → SECOND_MAIN sem atacar
+        turnManager.AdvancePhase();
         return;
     }
-    turnManager.AdvanceCombatStep(); // ATTACK_MAGIC → DECLARE_DEFENDERS
-    // Fluxo continua via OnCombatStepChanged
+    turnManager.AdvanceCombatStep();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -258,16 +320,51 @@ void SceneBattle::HandleConfirmAttack() {
 // ═══════════════════════════════════════════════════════════════════
 
 void SceneBattle::HandleInput(SDL_Event &event) {
-    // Após a batalha terminar, ignora toda entrada de jogo
     if (IsBattleOver()) return;
-
     if (event.type != SDL_MOUSEBUTTONDOWN) return;
+    if (summonPending.active) {
+        HandleSummonPendingInput(event);
+        return;
+    }
+
     if (HandleCancelClick(event)) return;
     if (HandleAttackClick(event)) return;
     if (HandleNextPhaseClick(event)) return;
     if (!turnManager.IsPlayerTurn()) return;
     if (HandleBattleCardClick(event)) return;
     HandleHandCardClick(event);
+}
+
+// ── Input do modo sacrifício ──────────────────────────────────────
+
+bool SceneBattle::HandleSummonPendingInput(const SDL_Event &e) {
+    if (e.type != SDL_MOUSEBUTTONDOWN || e.button.button != SDL_BUTTON_LEFT) return false;
+
+    if (GameManager::IsPointInsideRect(e.button.x, e.button.y, btnNextPhase)) {
+        ConfirmSummon();
+        return true;
+    }
+
+    if (GameManager::IsPointInsideRect(e.button.x, e.button.y, btnCancel)) {
+        CancelSummon();
+        return true;
+    }
+
+    for (auto *card : board.playerPreparationCards) {
+        if (!card) continue;
+        SDL_Rect r = {card->GetX(), card->GetY(), card->GetWidth(), card->GetHeight()};
+        if (!GameManager::IsPointInsideRect(e.button.x, e.button.y, r)) continue;
+        if (summonPending.cardToSacrifice == card) {
+            summonPending.cardToSacrifice = nullptr;
+            std::cout << "[SACRIFICIO] Selecao removida." << std::endl;
+        } else {
+            summonPending.cardToSacrifice = card;
+            std::cout << "[SACRIFICIO] " << card->GetName() << " selecionada." << std::endl;
+        }
+        return true;
+    }
+
+    return false;
 }
 
 bool SceneBattle::HandleNextPhaseClick(const SDL_Event &e) {
@@ -283,10 +380,9 @@ bool SceneBattle::HandleNextPhaseClick(const SDL_Event &e) {
         return true;
     }
     if (phase == BattlePhase::COMBAT && step == CombatStep::DECLARE_ATTACKERS) {
-        turnManager.AdvancePhase(); // COMBAT → SECOND_MAIN sem atacar
+        turnManager.AdvancePhase();
         return true;
     }
-
     turnManager.AdvancePhase();
     return true;
 }
@@ -318,22 +414,9 @@ bool SceneBattle::HandleHandCardClick(const SDL_Event &e) {
         bool isCreature = dynamic_cast<CreatureCard *>(card) != nullptr;
 
         if (isCreature && CanPlayCreature()) {
-            if (!SpendPlayerMana(card->GetManaCost(), card->GetName())) return true;
-            if (board.AddToPlayerPreparation(card, cardObjects)) {
-                hand.erase(std::next(it).base());
-                // Reorganiza a mão
-                int n = hand.size(), cw = 100, gap = 15;
-                int totalW = n * cw + (n - 1) * gap;
-                int startX = playerHandZone.x + (playerHandZone.w - totalW) / 2;
-                int y = playerHandZone.y + (playerHandZone.h - 140) / 2;
-                for (int i = 0; i < n; ++i)
-                    hand[i]->SetPosition(startX + i * (cw + gap), y);
-            } else {
-                currentState->mana.current += card->GetManaCost(); // devolve mana
-            }
+            TrySummonCard(card, it);
         } else if (!isCreature && CanPlaySpell()) {
             if (!SpendPlayerMana(card->GetManaCost(), card->GetName())) return true;
-            // TODO: pilha de resposta (implementar depois)
             std::cout << "[MAGIA] " << card->GetName() << " jogada (efeito pendente)." << std::endl;
         } else {
             std::cout << "[AVISO] Nao e possivel jogar essa carta agora." << std::endl;
@@ -379,8 +462,75 @@ void SceneBattle::Render(SDL_Renderer *renderer) {
     RenderMana(renderer);
     RenderHealthBars(renderer);
     RenderHUD(renderer);
-
+    if (summonPending.active) RenderSummonPending(renderer);
     if (IsBattleOver()) RenderOutcome(renderer);
+}
+
+void SceneBattle::RenderSummonPending(SDL_Renderer *renderer) const {
+    if (!summonPending.active || !summonPending.cardToSummon) return;
+
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 120);
+    SDL_Rect full = {0, 0, 1600, 900};
+    SDL_RenderFillRect(renderer, &full);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+
+    {
+        Card *c = summonPending.cardToSummon;
+        int origX = c->GetX(), origY = c->GetY();
+        c->SetPosition(660, 380);
+        c->Render(renderer);
+        c->SetPosition(origX, origY);
+    }
+
+    if (fontUI) {
+        TTF_Font *f = fontUI;
+
+        RenderText(renderer, f, "Escolha uma carta para enviar", {255, 220, 80, 255}, 800, 380);
+        RenderText(renderer, f, "ao cemiterio", {255, 220, 80, 255}, 800, 425);
+        RenderText(renderer, f, "(Cancelar: botao cancelar)", {180, 180, 180, 255}, 800, 490);
+
+        if (summonPending.cardToSacrifice) {
+            std::string confirmMsg = "Sacrificar: " + summonPending.cardToSacrifice->GetName();
+            RenderText(renderer, f, confirmMsg.c_str(), {255, 80, 80, 255}, 800, 535);
+
+            RenderText(renderer, f, "(Confirmar: botao confirmar)", {120, 255, 120, 255}, 800, 580);
+        }
+    }
+
+    for (const Card *card : board.playerPreparationCards) {
+        if (!card) continue;
+
+        bool isSelected = (summonPending.cardToSacrifice == card);
+        SDL_Rect highlight = {card->GetX() - 3, card->GetY() - 3, card->GetWidth() + 6,
+                              card->GetHeight() + 6};
+
+        if (isSelected) {
+            SDL_SetRenderDrawColor(renderer, 255, 60, 60, 255); // vermelho = selecionada
+        } else {
+            SDL_SetRenderDrawColor(renderer, 255, 255, 100, 255); // amarelo = disponível
+        }
+        SDL_RenderDrawRect(renderer, &highlight);
+        SDL_Rect inner = {highlight.x + 1, highlight.y + 1, highlight.w - 2, highlight.h - 2};
+        SDL_RenderDrawRect(renderer, &inner);
+    }
+    RenderButton(renderer, btnNextPhase, 50, 180, 50,
+                 summonPending.cardToSacrifice != nullptr); // só ativo se há seleção
+    RenderButton(renderer, btnCancel, 80, 80, 200, true);
+}
+
+void SceneBattle::RenderText(SDL_Renderer *renderer, TTF_Font *f, const char *text, SDL_Color color,
+                             int x, int y) const {
+    if (!f || !text) return;
+    SDL_Surface *surface = TTF_RenderUTF8_Solid(f, text, color);
+    if (!surface) return;
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+    if (texture) {
+        SDL_Rect dest = {x, y, surface->w, surface->h};
+        SDL_RenderCopy(renderer, texture, nullptr, &dest);
+        SDL_DestroyTexture(texture);
+    }
+    SDL_FreeSurface(surface);
 }
 
 void SceneBattle::RenderHand(SDL_Renderer *renderer) const {
@@ -398,7 +548,7 @@ void SceneBattle::RenderButton(SDL_Renderer *renderer, SDL_Rect r, Uint8 red, Ui
 }
 
 void SceneBattle::RenderButtons(SDL_Renderer *renderer) const {
-    if (IsBattleOver()) return;
+    if (IsBattleOver() || summonPending.active) return;
 
     bool isPlayer = turnManager.IsPlayerTurn();
     auto step = turnManager.GetCombatStep();
@@ -412,49 +562,22 @@ void SceneBattle::RenderButtons(SDL_Renderer *renderer) const {
         RenderButton(renderer, btnCancel, 80, 80, 200, true);
 }
 
-// ── Barras de HP ──────────────────────────────────────────────────
-// Jogador: canto inferior esquerdo
-// Oponente: canto superior esquerdo (abaixo do HUD de turno)
 void SceneBattle::RenderHealthBars(SDL_Renderer *renderer) const {
     if (!currentState || !opponent || !fontSmall) return;
 
-    // ── HP do oponente (posição superior esquerda, abaixo do painel de turno) ─────────
-    {
-        char hpText[64];
-        snprintf(hpText, sizeof(hpText), "Oponente: %d/%d", opponent->currentHealth, opponent->maxHealth);
-        
-        SDL_Color color = opponent->isGuardian ? SDL_Color{220, 130, 30, 255} : SDL_Color{200, 50, 50, 255};
-        SDL_Surface *surface = TTF_RenderText_Solid(fontSmall, hpText, color);
-        
-        if (surface) {
-            SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-            if (texture) {
-                SDL_Rect dest = {10, 90, surface->w, surface->h};
-                SDL_RenderCopy(renderer, texture, nullptr, &dest);
-                SDL_DestroyTexture(texture);
-            }
-            SDL_FreeSurface(surface);
-        }
-    }
+    char hpText[64];
 
-    // ── HP do jogador (canto inferior esquerdo) ────────────────────
-    {
-        char hpText[64];
-        snprintf(hpText, sizeof(hpText), "Você: %d/%d", currentState->currentHealth, currentState->maxHealth);
-        
-        SDL_Color color{50, 200, 80, 255};  // verde para jogador
-        SDL_Surface *surface = TTF_RenderText_Solid(fontSmall, hpText, color);
-        
-        if (surface) {
-            SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-            if (texture) {
-                SDL_Rect dest = {10, 870, surface->w, surface->h};
-                SDL_RenderCopy(renderer, texture, nullptr, &dest);
-                SDL_DestroyTexture(texture);
-            }
-            SDL_FreeSurface(surface);
-        }
-    }
+    // Oponente
+    snprintf(hpText, sizeof(hpText), "Oponente: %d/%d", opponent->currentHealth,
+             opponent->maxHealth);
+    SDL_Color oppColor =
+        opponent->isGuardian ? SDL_Color{220, 130, 30, 255} : SDL_Color{200, 50, 50, 255};
+    RenderText(renderer, fontSmall, hpText, oppColor, 10, 90);
+
+    // Jogador
+    snprintf(hpText, sizeof(hpText), "Voce: %d/%d", currentState->currentHealth,
+             currentState->maxHealth);
+    RenderText(renderer, fontSmall, hpText, {50, 200, 80, 255}, 10, 870);
 }
 
 void SceneBattle::RenderMana(SDL_Renderer *renderer) const {
@@ -463,7 +586,7 @@ void SceneBattle::RenderMana(SDL_Renderer *renderer) const {
     const ManaState &pm = currentState->mana;
     const ManaState &om = opponent->mana;
 
-    auto clampMana = [](int v) { return v < 0 ? 0 : v > 99 ? 99 : v; };
+    auto clamp = [](int v) { return v < 0 ? 0 : v > 99 ? 99 : v; };
 
     auto drawDigit = [&](int x, int y, int digit, Uint8 r, Uint8 g, Uint8 b) {
         static const bool segs[10][7] = {
@@ -489,7 +612,7 @@ void SceneBattle::RenderMana(SDL_Renderer *renderer) const {
 
     auto drawMana = [&](int value, int x, int y, Uint8 bgR, Uint8 bgG, Uint8 bgB, Uint8 fgR,
                         Uint8 fgG, Uint8 fgB) {
-        value = clampMana(value);
+        value = clamp(value);
         SDL_Rect bg = {x - 8, y - 8, 62, 52};
         SDL_SetRenderDrawColor(renderer, bgR, bgG, bgB, 210);
         SDL_RenderFillRect(renderer, &bg);
@@ -532,41 +655,27 @@ void SceneBattle::RenderHUD(SDL_Renderer *renderer) const {
     }
 }
 
-// Overlay simples de vitória/derrota — fundo semitransparente + retângulo colorido
 void SceneBattle::RenderOutcome(SDL_Renderer *renderer) const {
     if (!font) return;
 
-    // Fundo escurecido
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 160);
     SDL_Rect full = {0, 0, 1600, 900};
     SDL_RenderFillRect(renderer, &full);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
-    // Renderiza texto baseado no resultado
-    const char *text = (outcome == BattleOutcome::PLAYER_WIN) ? "VITÓRIA!" : "DERROTA!";
-    SDL_Color color = (outcome == BattleOutcome::PLAYER_WIN)
-                          ? SDL_Color{30, 255, 60, 255}   // verde para vitória
-                          : SDL_Color{255, 50, 50, 255};  // vermelho para derrota
+    const char *text = (outcome == BattleOutcome::PLAYER_WIN) ? "VITORIA!" : "DERROTA!";
+    SDL_Color color = (outcome == BattleOutcome::PLAYER_WIN) ? SDL_Color{30, 255, 60, 255}
+                                                             : SDL_Color{255, 50, 50, 255};
 
-    SDL_Surface *surface = TTF_RenderText_Solid(font, text, color);
-    if (!surface) {
-        std::cerr << "Falha ao renderizar texto: " << TTF_GetError() << std::endl;
-        return;
-    }
-
+    SDL_Surface *surface = TTF_RenderUTF8_Solid(font, text, color);
+    if (!surface) return;
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-    if (!texture) {
-        std::cerr << "Falha ao criar textura: " << SDL_GetError() << std::endl;
-        SDL_FreeSurface(surface);
-        return;
+    if (texture) {
+        SDL_Rect dest = {(1600 - surface->w) / 2, (900 - surface->h) / 2, surface->w, surface->h};
+        SDL_RenderCopy(renderer, texture, nullptr, &dest);
+        SDL_DestroyTexture(texture);
     }
-
-    // Centraliza o texto na tela
-    SDL_Rect dest = {(1600 - surface->w) / 2, (900 - surface->h) / 2, surface->w, surface->h};
-    SDL_RenderCopy(renderer, texture, nullptr, &dest);
-
-    SDL_DestroyTexture(texture);
     SDL_FreeSurface(surface);
 }
 
@@ -584,18 +693,15 @@ bool SceneBattle::SetCurrentPlayerState(Player *p) {
 }
 
 void SceneBattle::ResetBattleState() {
-    // Destrói todos os objetos anteriores antes de limpar
     for (auto *obj : objects)
         delete obj;
     objects.clear();
-
-    // limpa ponteiros específicos de carta (não delete novamente — já foram deletados acima)
     cardObjects.clear();
-
     drawPile.clear();
     hand.clear();
     discardPile.clear();
     board.Reset();
+    summonPending.Clear();
 
     if (currentState) currentState->mana = ManaState{};
     if (opponent) opponent->Reset();
@@ -619,7 +725,6 @@ void SceneBattle::AddDeckCardToDrawPile(const std::string &cardId) {
         std::cout << "Carta ID " << id << " nao encontrada." << std::endl;
         return;
     }
-
     if (!card) return;
     card->SetPosition(-200, -200);
     drawPile.push_back(card);
@@ -655,7 +760,8 @@ void SceneBattle::DrawCards(int amount) {
         if (currentState->IsHandFull(static_cast<int>(hand.size()))) {
             std::cout << "Mao cheia! " << card->GetName() << " destruida." << std::endl;
             objects.erase(std::remove(objects.begin(), objects.end(), card), objects.end());
-            cardObjects.erase(std::remove(cardObjects.begin(), cardObjects.end(), card), cardObjects.end());
+            cardObjects.erase(std::remove(cardObjects.begin(), cardObjects.end(), card),
+                              cardObjects.end());
             delete card;
         } else {
             hand.push_back(card);
@@ -664,11 +770,5 @@ void SceneBattle::DrawCards(int amount) {
         }
     }
 
-    // Reorganiza a mão
-    int n = hand.size(), cw = 100, gap = 15;
-    int totalW = n * cw + (n - 1) * gap;
-    int startX = playerHandZone.x + (playerHandZone.w - totalW) / 2;
-    int y = playerHandZone.y + (playerHandZone.h - 140) / 2;
-    for (int i = 0; i < n; ++i)
-        hand[i]->SetPosition(startX + i * (cw + gap), y);
+    RearrangeHand();
 }
