@@ -41,15 +41,18 @@ void Card::Render(SDL_Renderer *renderer) {
     if (texture) {
         SDL_RenderCopy(renderer, texture, nullptr, &rect);
     } else {
-        Color borderColor = GetRarityColor();
-        SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b,
-                               borderColor.a);
-        SDL_RenderFillRect(renderer, &rect);
-
-        int padding = 4;
-        SDL_Rect innerRect = {x + padding, y + padding, width - padding * 2, height - padding * 2};
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        SDL_RenderFillRect(renderer, &innerRect);
+        SDL_RenderFillRect(renderer, &rect);
+    }
+
+    Color borderColor = GetRarityColor();
+    SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b,
+                           borderColor.a);
+
+    const int borderThickness = 4;
+    for (int i = 0; i < borderThickness; ++i) {
+        SDL_Rect borderRect = {x + i, y + i, width - (i * 2), height - (i * 2)};
+        SDL_RenderDrawRect(renderer, &borderRect);
     }
 }
 

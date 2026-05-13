@@ -13,11 +13,29 @@
 
 enum class BattleOutcome { ONGOING, PLAYER_WIN, PLAYER_LOSE };
 
+struct SummonPendingState {
+    Card *cardToSummon = nullptr;
+    Card *cardToSacrifice = nullptr;
+    bool active = false;
+
+    void Begin(Card *toSummon) {
+        cardToSummon = toSummon;
+        cardToSacrifice = nullptr;
+        active = true;
+    }
+
+    void Clear() {
+        cardToSummon = nullptr;
+        cardToSacrifice = nullptr;
+        active = false;
+    }
+};
+
 class SceneBattle : public GameWorld {
   private:
     // ── Núcleo do jogo ────────────────────────────────────────────
     TurnManager turnManager;
-    Board board; // lógica de campo — referencia turnManager
+    Board board;
 
     // ── Layout SDL ────────────────────────────────────────────────
     SDL_Rect enemyPreparationZone;
@@ -38,8 +56,14 @@ class SceneBattle : public GameWorld {
     CardDatabase cardDatabase;
     Card *draggedCard = nullptr;
     BattleOutcome outcome = BattleOutcome::ONGOING;
-    TTF_Font *font = nullptr;       // Fonte grande para tela de vitória/derrota
-    TTF_Font *fontSmall = nullptr;  // Fonte pequena para HP display
+
+    // ── Fontes ────────────────────────────────────────────────────
+    TTF_Font *font = nullptr;      // grande — vitória/derrota
+    TTF_Font *fontSmall = nullptr; // pequena — HP display
+    TTF_Font *fontUI = nullptr;    // frozen — textos de UI (sacrifício, etc.)
+
+    // ── Estado de sacrifício ──────────────────────────────────────
+    SummonPendingState summonPending;
 
     // ── Pilhas de cartas ──────────────────────────────────────────
     std::vector<Card *> drawPile;
@@ -59,6 +83,11 @@ class SceneBattle : public GameWorld {
     // ── Mana ──────────────────────────────────────────────────────
     bool SpendPlayerMana(int cost, const std::string &cardName);
 
+    // ── Invocação e sacrifício ─────────────────────────────────────
+    void TrySummonCard(Card *card, std::vector<Card *>::reverse_iterator handIt);
+    void ConfirmSummon();
+    void CancelSummon();
+
     // ── Combate ───────────────────────────────────────────────────
     void HandleAttackButton();
     void HandleCancelAttack();
@@ -77,12 +106,16 @@ class SceneBattle : public GameWorld {
     bool HandleHandCardClick(const SDL_Event &e);
     bool HandleBattleCardClick(const SDL_Event &e);
 
+    // Input específico do modo sacrifício
+    bool HandleSummonPendingInput(const SDL_Event &e);
+
     // ── Deck ──────────────────────────────────────────────────────
     bool SetCurrentPlayerState(Player *p);
     void ResetBattleState();
     void AddDeckCardToDrawPile(const std::string &cardId);
     void BuildDrawPileFromPlayerDeck();
     void ShuffleDrawPile();
+    void RearrangeHand(); // reposiciona cartas na mão após adição/remoção
 
     // ── Render ────────────────────────────────────────────────────
     void RenderButtons(SDL_Renderer *renderer) const;
@@ -91,8 +124,11 @@ class SceneBattle : public GameWorld {
     void RenderMana(SDL_Renderer *renderer) const;
     void RenderHealthBars(SDL_Renderer *renderer) const;
     void RenderOutcome(SDL_Renderer *renderer) const;
+    void RenderSummonPending(SDL_Renderer *renderer) const; // <<< NOVO
     void RenderButton(SDL_Renderer *renderer, SDL_Rect r, Uint8 red, Uint8 grn, Uint8 blu,
                       bool enabled = true) const;
+    void RenderText(SDL_Renderer *renderer, TTF_Font *f, const char *text, SDL_Color color, int x,
+                    int y) const;
 
   public:
     SceneBattle();
@@ -103,7 +139,6 @@ class SceneBattle : public GameWorld {
     void Update(float dt) override;
     void Render(SDL_Renderer *renderer) override;
 
-    // opponent deve ter SetGuardian() chamado antes se aplicável
     void StartBattle(Player *state, Opponent *opp, SDL_Renderer *renderer);
     void DrawCards(int amount);
 };
