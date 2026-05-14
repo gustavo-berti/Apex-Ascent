@@ -60,8 +60,6 @@ class Board {
     // ── Combate ───────────────────────────────────────────────────
     // Retorna false se não houver atacantes (cena passa o combate sem atacar)
     bool ConfirmAttack();
-
-    // Oponente sem IA: passa automaticamente
     void ResolveDefenders();
 
     // Calcula dano direto ao HP do oponente (sem defensores por enquanto).

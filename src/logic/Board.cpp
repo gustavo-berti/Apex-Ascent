@@ -204,9 +204,6 @@ CombatResult Board::ResolveCombat(int &opponentCurrentHP, std::vector<Card *> &o
     CombatResult result;
 
     // ── Sem defensores: dano direto ao HP do oponente ─────────────
-    // Cada atacante contribui com seu ATK.
-    // A lógica de defensor (pareamento, dano excedente, morte de criaturas)
-    // será implementada depois quando a interação defensor→atacante estiver pronta.
 
     if (enemyBattleCards.empty()) {
         for (Card *attacker : selectedAttackers) {

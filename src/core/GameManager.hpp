@@ -29,4 +29,5 @@ class GameManager {
     SDL_Renderer *GetRenderer() const { return renderer; }
     Player &GetPlayer() { return player; }
     Opponent &GetOpponent() { return opponent; }
+    void SetOpponentDeck(Race type, int part) { opponent.SetDeck(type, part); }
 };
