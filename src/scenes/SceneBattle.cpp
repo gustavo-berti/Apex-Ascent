@@ -23,10 +23,6 @@ SceneBattle::~SceneBattle() {
         TTF_CloseFont(fontSmall);
         fontSmall = nullptr;
     }
-    if (fontUI) {
-        TTF_CloseFont(fontUI);
-        fontUI = nullptr;
-    }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -479,18 +475,23 @@ void SceneBattle::RenderSummonPending(SDL_Renderer *renderer) const {
         c->SetPosition(origX, origY);
     }
 
-    if (fontUI) {
-        TTF_Font *f = fontUI;
-
-        RenderText(renderer, f, "Escolha uma carta para enviar", {255, 220, 80, 255}, 800, 380);
-        RenderText(renderer, f, "ao cemiterio", {255, 220, 80, 255}, 800, 425);
-        RenderText(renderer, f, "(Cancelar: botao cancelar)", {180, 180, 180, 255}, 800, 490);
+    if (fontSmall) {
+        ui::UIRenderUtils::RenderText(renderer, "Campo cheio!", 800, 300,
+                                      SDL_Color{255, 80, 80, 255}, fontSmall);
+        ui::UIRenderUtils::RenderText(renderer, "Escolha uma carta para enviar", 800, 380,
+                                      SDL_Color{255, 220, 80, 255}, fontSmall);
+        ui::UIRenderUtils::RenderText(renderer, "ao cemiterio", 800, 425,
+                                      SDL_Color{255, 220, 80, 255}, fontSmall);
+        ui::UIRenderUtils::RenderText(renderer, "(Cancelar: botao cancelar)", 800, 490,
+                                      SDL_Color{180, 180, 180, 255}, fontSmall);
 
         if (summonPending.cardToSacrifice) {
             std::string confirmMsg = "Sacrificar: " + summonPending.cardToSacrifice->GetName();
-            RenderText(renderer, f, confirmMsg.c_str(), {255, 80, 80, 255}, 800, 535);
+            ui::UIRenderUtils::RenderText(renderer, confirmMsg, 800, 535,
+                                          SDL_Color{255, 80, 80, 255}, font);
 
-            RenderText(renderer, f, "(Confirmar: botao confirmar)", {120, 255, 120, 255}, 800, 580);
+            ui::UIRenderUtils::RenderText(renderer, "(Confirmar: botao confirmar)", 800, 580,
+                                          SDL_Color{120, 255, 120, 255}, font);
         }
     }
 
@@ -510,13 +511,12 @@ void SceneBattle::RenderSummonPending(SDL_Renderer *renderer) const {
         SDL_Rect inner = {highlight.x + 1, highlight.y + 1, highlight.w - 2, highlight.h - 2};
         SDL_RenderDrawRect(renderer, &inner);
     }
-    
+
     const SDL_Color borderColor = {255, 255, 255, 255};
     const SDL_Color textColor = {255, 255, 255, 255};
     ui::UIRenderUtils::RenderButton(renderer, btnNextPhase, "Confirmar", fontSmall,
-                                    summonPending.cardToSacrifice != nullptr,
-                                    {50, 180, 50, 255}, {80, 220, 80, 255}, borderColor,
-                                    textColor);
+                                    summonPending.cardToSacrifice != nullptr, {50, 180, 50, 255},
+                                    {80, 220, 80, 255}, borderColor, textColor);
     ui::UIRenderUtils::RenderButton(renderer, btnCancel, "Cancelar", fontSmall, true,
                                     {80, 80, 200, 255}, {120, 120, 240, 255}, borderColor,
                                     textColor);
