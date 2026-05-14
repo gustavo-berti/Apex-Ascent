@@ -1,11 +1,9 @@
 #include "SceneMenu.hpp"
 #include "../core/GameManager.hpp"
+#include "../objects/ui/UIRenderUtils.hpp"
 #include "../scenes/SceneBattle.hpp"
 #include <SDL2/SDL_ttf.h>
 #include <iostream>
-
-TTF_Font *font = nullptr;
-TTF_Font *fontTitle = nullptr;
 
 SceneMenu::SceneMenu(GameManager &gm) : gameManager(gm) {}
 
@@ -13,14 +11,6 @@ SceneMenu::~SceneMenu() {
     if (background) {
         SDL_DestroyTexture(background);
         background = nullptr;
-    }
-    if (font) {
-        TTF_CloseFont(font);
-        font = nullptr;
-    }
-    if (fontTitle) {
-        TTF_CloseFont(fontTitle);
-        fontTitle = nullptr;
     }
 }
 
@@ -52,9 +42,8 @@ void SceneMenu::Initialize(SDL_Renderer *renderer) {
         {{startX, startY + (gap + btnH) * 2, btnW, btnH}, "Sair"},
     };
 
-    TTF_Init();
-    font = TTF_OpenFont("assets/fonts/frozen.ttf", 24);
-    fontTitle = TTF_OpenFont("assets/fonts/frozen.ttf", 60);
+    font = ui::UIRenderUtils::LoadFont("assets/fonts/frozen.ttf", 24);
+    fontTitle = ui::UIRenderUtils::LoadFont("assets/fonts/frozen.ttf", 60);
 }
 
 bool SceneMenu::IsButtonClicked(const MenuButton &btn, const SDL_Event &event) const {
@@ -114,49 +103,11 @@ void SceneMenu::Render(SDL_Renderer *renderer) {
         int titleX = (w - titleW) / 2;
         int titleY = 50;
         SDL_Color white = {255, 255, 255, 255};
-        RenderText(renderer, title, titleX, titleY, white, fontTitle);
+        ui::UIRenderUtils::RenderText(renderer, title, titleX, titleY, white, fontTitle);
     }
 
-    for (int i = 0; i < (int)buttons.size(); i++)
-        RenderButton(renderer, buttons[i], i == hoveredIndex);
-}
-
-void SceneMenu::RenderButton(SDL_Renderer *renderer, const MenuButton &btn, bool hovered) const {
-    if (hovered)
-        SDL_SetRenderDrawColor(renderer, 100, 100, 180, 255); // mais claro
-    else
-        SDL_SetRenderDrawColor(renderer, 60, 60, 100, 255);
-
-    SDL_RenderFillRect(renderer, &btn.rect);
-
-    SDL_SetRenderDrawColor(renderer, 180, 180, 255, 255);
-    SDL_RenderDrawRect(renderer, &btn.rect);
-
-    if (font) {
-        int textW, textH;
-        TTF_SizeUTF8(font, btn.label.c_str(), &textW, &textH);
-        int textX = btn.rect.x + (btn.rect.w - textW) / 2;
-        int textY = btn.rect.y + (btn.rect.h - textH) / 2;
-
-        SDL_Color white = {255, 255, 255, 255};
-        RenderText(renderer, btn.label, textX, textY, white, font);
+    for (int i = 0; i < (int)buttons.size(); i++) {
+        ui::UIRenderUtils::RenderButton(renderer, buttons[i].rect, buttons[i].label, font,
+                                        i == hoveredIndex);
     }
-}
-
-void SceneMenu::RenderText(SDL_Renderer *renderer, const std::string &text, int x, int y,
-                           SDL_Color color, TTF_Font *font) const {
-    if (!font) return;
-
-    SDL_Surface *surface = TTF_RenderUTF8_Blended(font, text.c_str(), color);
-    if (!surface) return;
-
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_FreeSurface(surface);
-    if (!texture) return;
-
-    int w, h;
-    SDL_QueryTexture(texture, nullptr, nullptr, &w, &h);
-    SDL_Rect dst = {x, y, w, h};
-    SDL_RenderCopy(renderer, texture, nullptr, &dst);
-    SDL_DestroyTexture(texture);
 }

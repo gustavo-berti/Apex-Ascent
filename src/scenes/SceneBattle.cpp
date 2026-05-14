@@ -2,6 +2,7 @@
 #include "../core/GameManager.hpp"
 #include "../logic/CardFactory.hpp"
 #include "../objects/cards/SpellCard.hpp"
+#include "../objects/ui/UIRenderUtils.hpp"
 #include <SDL2/SDL_ttf.h>
 #include <algorithm>
 #include <iostream>
@@ -22,10 +23,6 @@ SceneBattle::~SceneBattle() {
         TTF_CloseFont(fontSmall);
         fontSmall = nullptr;
     }
-    if (fontUI) {
-        TTF_CloseFont(fontUI);
-        fontUI = nullptr;
-    }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -38,13 +35,8 @@ void SceneBattle::Initialize(SDL_Renderer *renderer) {
     if (!cardDatabase.LoadFromJson("assets/data/cards.json"))
         std::cerr << "Falha ao carregar cards.json" << std::endl;
 
-    font = TTF_OpenFont("assets/fonts/frozen.ttf", 72);
-    fontSmall = TTF_OpenFont("assets/fonts/frozen.ttf", 28);
-    fontUI = TTF_OpenFont("assets/fonts/frozen.ttf", 32);
-
-    if (!font) std::cerr << "Falha ao carregar fonte (72): " << TTF_GetError() << std::endl;
-    if (!fontSmall) std::cerr << "Falha ao carregar fonte (28): " << TTF_GetError() << std::endl;
-    if (!fontUI) std::cerr << "Falha ao carregar frozen (32): " << TTF_GetError() << std::endl;
+    font = ui::UIRenderUtils::LoadFont("./assets/fonts/arial.ttf", 72);
+    fontSmall = ui::UIRenderUtils::LoadFont("./assets/fonts/arial.ttf", 28);
 
     const int boardWidth = 1000;
     const int boardX = (1600 - boardWidth) / 2;
@@ -483,18 +475,23 @@ void SceneBattle::RenderSummonPending(SDL_Renderer *renderer) const {
         c->SetPosition(origX, origY);
     }
 
-    if (fontUI) {
-        TTF_Font *f = fontUI;
-
-        RenderText(renderer, f, "Escolha uma carta para enviar", {255, 220, 80, 255}, 800, 380);
-        RenderText(renderer, f, "ao cemiterio", {255, 220, 80, 255}, 800, 425);
-        RenderText(renderer, f, "(Cancelar: botao cancelar)", {180, 180, 180, 255}, 800, 490);
+    if (fontSmall) {
+        ui::UIRenderUtils::RenderText(renderer, "Campo cheio!", 800, 300,
+                                      SDL_Color{255, 80, 80, 255}, fontSmall);
+        ui::UIRenderUtils::RenderText(renderer, "Escolha uma carta para enviar", 800, 380,
+                                      SDL_Color{255, 220, 80, 255}, fontSmall);
+        ui::UIRenderUtils::RenderText(renderer, "ao cemiterio", 800, 425,
+                                      SDL_Color{255, 220, 80, 255}, fontSmall);
+        ui::UIRenderUtils::RenderText(renderer, "(Cancelar: botao cancelar)", 800, 490,
+                                      SDL_Color{180, 180, 180, 255}, fontSmall);
 
         if (summonPending.cardToSacrifice) {
             std::string confirmMsg = "Sacrificar: " + summonPending.cardToSacrifice->GetName();
-            RenderText(renderer, f, confirmMsg.c_str(), {255, 80, 80, 255}, 800, 535);
+            ui::UIRenderUtils::RenderText(renderer, confirmMsg, 800, 535,
+                                          SDL_Color{255, 80, 80, 255}, font);
 
-            RenderText(renderer, f, "(Confirmar: botao confirmar)", {120, 255, 120, 255}, 800, 580);
+            ui::UIRenderUtils::RenderText(renderer, "(Confirmar: botao confirmar)", 800, 580,
+                                          SDL_Color{120, 255, 120, 255}, font);
         }
     }
 
@@ -514,9 +511,15 @@ void SceneBattle::RenderSummonPending(SDL_Renderer *renderer) const {
         SDL_Rect inner = {highlight.x + 1, highlight.y + 1, highlight.w - 2, highlight.h - 2};
         SDL_RenderDrawRect(renderer, &inner);
     }
-    RenderButton(renderer, btnNextPhase, 50, 180, 50,
-                 summonPending.cardToSacrifice != nullptr); // só ativo se há seleção
-    RenderButton(renderer, btnCancel, 80, 80, 200, true);
+
+    const SDL_Color borderColor = {255, 255, 255, 255};
+    const SDL_Color textColor = {255, 255, 255, 255};
+    ui::UIRenderUtils::RenderButton(renderer, btnNextPhase, "Confirmar", fontSmall,
+                                    summonPending.cardToSacrifice != nullptr, {50, 180, 50, 255},
+                                    {80, 220, 80, 255}, borderColor, textColor);
+    ui::UIRenderUtils::RenderButton(renderer, btnCancel, "Cancelar", fontSmall, true,
+                                    {80, 80, 200, 255}, {120, 120, 240, 255}, borderColor,
+                                    textColor);
 }
 
 void SceneBattle::RenderText(SDL_Renderer *renderer, TTF_Font *f, const char *text, SDL_Color color,
@@ -538,46 +541,56 @@ void SceneBattle::RenderHand(SDL_Renderer *renderer) const {
         c->Render(renderer);
 }
 
-void SceneBattle::RenderButton(SDL_Renderer *renderer, SDL_Rect r, Uint8 red, Uint8 grn, Uint8 blu,
-                               bool enabled) const {
-    SDL_SetRenderDrawColor(renderer, enabled ? red : 60, enabled ? grn : 60, enabled ? blu : 60,
-                           255);
-    SDL_RenderFillRect(renderer, &r);
-    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
-    SDL_RenderDrawRect(renderer, &r);
-}
-
 void SceneBattle::RenderButtons(SDL_Renderer *renderer) const {
     if (IsBattleOver() || summonPending.active) return;
 
     bool isPlayer = turnManager.IsPlayerTurn();
     auto step = turnManager.GetCombatStep();
 
-    RenderButton(renderer, btnNextPhase, 220, 160, 0, isPlayer);
+    const SDL_Color borderColor = {255, 255, 255, 255};
+    const SDL_Color textColor = {255, 255, 255, 255};
+
+    const std::string nextPhaseLabel =
+        (turnManager.GetPhase() == BattlePhase::COMBAT && step == CombatStep::ATTACK_MAGIC)
+            ? "Confirmar"
+            : "Próximo";
+
+    ui::UIRenderUtils::RenderButton(renderer, btnNextPhase, nextPhaseLabel, fontSmall, isPlayer,
+                                    {220, 160, 0, 255}, {250, 200, 40, 255}, borderColor,
+                                    textColor);
 
     if (board.ShouldShowAttackButton())
-        RenderButton(renderer, btnAttack, 200, 50, 50, board.CanDeclareAttack());
+        ui::UIRenderUtils::RenderButton(renderer, btnAttack, "Atacar", fontSmall,
+                                        board.CanDeclareAttack(), {200, 50, 50, 255},
+                                        {230, 80, 80, 255}, borderColor, textColor);
 
     if (step == CombatStep::ATTACK_MAGIC && isPlayer)
-        RenderButton(renderer, btnCancel, 80, 80, 200, true);
+        ui::UIRenderUtils::RenderButton(renderer, btnCancel, "Cancelar", fontSmall, true,
+                                        {80, 80, 200, 255}, {120, 120, 240, 255}, borderColor,
+                                        textColor);
 }
 
 void SceneBattle::RenderHealthBars(SDL_Renderer *renderer) const {
     if (!currentState || !opponent || !fontSmall) return;
 
-    char hpText[64];
+    // ── HP do oponente (posição superior esquerda, abaixo do painel de turno) ─────────
+    {
+        char hpText[64];
+        snprintf(hpText, sizeof(hpText), "Oponente: %d/%d", opponent->currentHealth,
+                 opponent->maxHealth);
+        SDL_Color color =
+            opponent->isGuardian ? SDL_Color{220, 130, 30, 255} : SDL_Color{200, 50, 50, 255};
+        ui::UIRenderUtils::RenderText(renderer, hpText, 10, 90, color, fontSmall);
+    }
 
-    // Oponente
-    snprintf(hpText, sizeof(hpText), "Oponente: %d/%d", opponent->currentHealth,
-             opponent->maxHealth);
-    SDL_Color oppColor =
-        opponent->isGuardian ? SDL_Color{220, 130, 30, 255} : SDL_Color{200, 50, 50, 255};
-    RenderText(renderer, fontSmall, hpText, oppColor, 10, 90);
-
-    // Jogador
-    snprintf(hpText, sizeof(hpText), "Voce: %d/%d", currentState->currentHealth,
-             currentState->maxHealth);
-    RenderText(renderer, fontSmall, hpText, {50, 200, 80, 255}, 10, 870);
+    // ── HP do jogador (canto inferior esquerdo) ────────────────────
+    {
+        char hpText[64];
+        snprintf(hpText, sizeof(hpText), "Você: %d/%d", currentState->currentHealth,
+                 currentState->maxHealth);
+        SDL_Color color{50, 200, 80, 255}; // verde para jogador
+        ui::UIRenderUtils::RenderText(renderer, hpText, 10, 870, color, fontSmall);
+    }
 }
 
 void SceneBattle::RenderMana(SDL_Renderer *renderer) const {
@@ -586,44 +599,34 @@ void SceneBattle::RenderMana(SDL_Renderer *renderer) const {
     const ManaState &pm = currentState->mana;
     const ManaState &om = opponent->mana;
 
-    auto clamp = [](int v) { return v < 0 ? 0 : v > 99 ? 99 : v; };
+    auto clampMana = [](int value) { return value < 0 ? 0 : value > 99 ? 99 : value; };
 
-    auto drawDigit = [&](int x, int y, int digit, Uint8 r, Uint8 g, Uint8 b) {
-        static const bool segs[10][7] = {
-            {1, 1, 1, 1, 1, 1, 0}, {0, 1, 1, 0, 0, 0, 0}, {1, 1, 0, 1, 1, 0, 1},
-            {1, 1, 1, 1, 0, 0, 1}, {0, 1, 1, 0, 0, 1, 1}, {1, 0, 1, 1, 0, 1, 1},
-            {1, 0, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 0, 0, 0}, {1, 1, 1, 1, 1, 1, 1},
-            {1, 1, 1, 1, 0, 1, 1},
-        };
-        const int t = 4, w = 22, h = 36;
-        SDL_Rect seg[7] = {
-            {x + t, y, w - 2 * t, t},
-            {x + w - t, y + t, t, h / 2 - t},
-            {x + w - t, y + h / 2, t, h / 2 - t},
-            {x + t, y + h - t, w - 2 * t, t},
-            {x, y + h / 2, t, h / 2 - t},
-            {x, y + t, t, h / 2 - t},
-            {x + t, y + h / 2 - t / 2, w - 2 * t, t},
-        };
-        SDL_SetRenderDrawColor(renderer, r, g, b, 255);
-        for (int i = 0; i < 7; ++i)
-            if (segs[digit][i]) SDL_RenderFillRect(renderer, &seg[i]);
-    };
+    auto drawManaLabel = [&](int current, int total, int x, int y, Uint8 bgR, Uint8 bgG, Uint8 bgB,
+                             SDL_Color textColor) {
+        const int safeCurrent = clampMana(current);
+        const int safeTotal = clampMana(total);
+        const std::string text = std::to_string(safeCurrent) + "/" + std::to_string(safeTotal);
 
-    auto drawMana = [&](int value, int x, int y, Uint8 bgR, Uint8 bgG, Uint8 bgB, Uint8 fgR,
-                        Uint8 fgG, Uint8 fgB) {
-        value = clamp(value);
-        SDL_Rect bg = {x - 8, y - 8, 62, 52};
+        int textW = 0;
+        int textH = 0;
+        TTF_SizeUTF8(fontSmall, text.c_str(), &textW, &textH);
+
+        const int paddingX = 10;
+        const int paddingY = 6;
+        SDL_Rect panel = {x - paddingX, y - paddingY, textW + paddingX * 2, textH + paddingY * 2};
+
         SDL_SetRenderDrawColor(renderer, bgR, bgG, bgB, 210);
-        SDL_RenderFillRect(renderer, &bg);
-        SDL_SetRenderDrawColor(renderer, fgR, fgG, fgB, 255);
-        SDL_RenderDrawRect(renderer, &bg);
-        if (value / 10 > 0) drawDigit(x, y, value / 10, fgR, fgG, fgB);
-        drawDigit(x + 28, y, value % 10, fgR, fgG, fgB);
+        SDL_RenderFillRect(renderer, &panel);
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderDrawRect(renderer, &panel);
+
+        const int textX = panel.x + (panel.w - textW) / 2;
+        const int textY = panel.y + (panel.h - textH) / 2;
+        ui::UIRenderUtils::RenderText(renderer, text, textX, textY, textColor, fontSmall);
     };
 
-    drawMana(pm.current, 18, 760, 10, 24, 70, 100, 200, 255);
-    drawMana(om.current, 1512, 16, 70, 12, 12, 255, 120, 120);
+    drawManaLabel(pm.current, pm.total, 15, 760, 10, 24, 70, SDL_Color{100, 200, 255, 255});
+    drawManaLabel(om.current, om.total, 1500, 40, 70, 12, 12, SDL_Color{255, 120, 120, 255});
 }
 
 void SceneBattle::RenderHUD(SDL_Renderer *renderer) const {
@@ -664,19 +667,18 @@ void SceneBattle::RenderOutcome(SDL_Renderer *renderer) const {
     SDL_RenderFillRect(renderer, &full);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
-    const char *text = (outcome == BattleOutcome::PLAYER_WIN) ? "VITORIA!" : "DERROTA!";
-    SDL_Color color = (outcome == BattleOutcome::PLAYER_WIN) ? SDL_Color{30, 255, 60, 255}
-                                                             : SDL_Color{255, 50, 50, 255};
+    // Renderiza texto baseado no resultado
+    const char *text = (outcome == BattleOutcome::PLAYER_WIN) ? "VITÓRIA!" : "DERROTA!";
+    SDL_Color color = (outcome == BattleOutcome::PLAYER_WIN)
+                          ? SDL_Color{30, 255, 60, 255}  // verde para vitória
+                          : SDL_Color{255, 50, 50, 255}; // vermelho para derrota
 
-    SDL_Surface *surface = TTF_RenderUTF8_Solid(font, text, color);
-    if (!surface) return;
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-    if (texture) {
-        SDL_Rect dest = {(1600 - surface->w) / 2, (900 - surface->h) / 2, surface->w, surface->h};
-        SDL_RenderCopy(renderer, texture, nullptr, &dest);
-        SDL_DestroyTexture(texture);
-    }
-    SDL_FreeSurface(surface);
+    int textW = 0;
+    int textH = 0;
+    TTF_SizeUTF8(font, text, &textW, &textH);
+    const int textX = (1600 - textW) / 2;
+    const int textY = (900 - textH) / 2;
+    ui::UIRenderUtils::RenderText(renderer, text, textX, textY, color, font);
 }
 
 // ═══════════════════════════════════════════════════════════════════
