@@ -482,16 +482,11 @@ void SceneBattle::RenderSummonPending(SDL_Renderer *renderer) const {
                                       SDL_Color{255, 220, 80, 255}, fontSmall);
         ui::UIRenderUtils::RenderText(renderer, "ao cemiterio", 800, 425,
                                       SDL_Color{255, 220, 80, 255}, fontSmall);
-        ui::UIRenderUtils::RenderText(renderer, "(Cancelar: botao cancelar)", 800, 490,
-                                      SDL_Color{180, 180, 180, 255}, fontSmall);
 
         if (summonPending.cardToSacrifice) {
-            std::string confirmMsg = "Sacrificar: " + summonPending.cardToSacrifice->GetName();
+            std::string confirmMsg = "Sacrificar " + summonPending.cardToSacrifice->GetName() + "?";
             ui::UIRenderUtils::RenderText(renderer, confirmMsg, 800, 535,
-                                          SDL_Color{255, 80, 80, 255}, font);
-
-            ui::UIRenderUtils::RenderText(renderer, "(Confirmar: botao confirmar)", 800, 580,
-                                          SDL_Color{120, 255, 120, 255}, font);
+                                          SDL_Color{255, 80, 80, 255}, fontSmall);
         }
     }
 
