@@ -22,9 +22,6 @@ class SceneMenu : public GameWorld {
     int hoveredIndex = -1;
 
     bool IsButtonClicked(const MenuButton &btn, const SDL_Event &event) const;
-    void RenderButton(SDL_Renderer *renderer, const MenuButton &btn, bool hovered) const;
-    void RenderText(SDL_Renderer *renderer, const std::string &text, int x, int y, SDL_Color color,
-                    TTF_Font *font) const;
 
   public:
     SceneMenu(GameManager &manager);
