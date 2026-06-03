@@ -517,20 +517,6 @@ void SceneBattle::RenderSummonPending(SDL_Renderer *renderer) const {
                                     textColor);
 }
 
-void SceneBattle::RenderText(SDL_Renderer *renderer, TTF_Font *f, const char *text, SDL_Color color,
-                             int x, int y) const {
-    if (!f || !text) return;
-    SDL_Surface *surface = TTF_RenderUTF8_Solid(f, text, color);
-    if (!surface) return;
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-    if (texture) {
-        SDL_Rect dest = {x, y, surface->w, surface->h};
-        SDL_RenderCopy(renderer, texture, nullptr, &dest);
-        SDL_DestroyTexture(texture);
-    }
-    SDL_FreeSurface(surface);
-}
-
 void SceneBattle::RenderHand(SDL_Renderer *renderer) const {
     for (auto *c : hand)
         c->Render(renderer);
