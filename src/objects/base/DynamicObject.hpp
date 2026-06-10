@@ -1,21 +1,21 @@
 #pragma once
-#include "../../core/GameObject.hpp"
+#include "StaticObject.hpp"
 
-class DynamicObject : public GameObject {
-    protected:
-        int x, y;
-        int width, height;
-        bool isHovered;
-    public:
-        DynamicObject(int x, int y, int w, int h) : x(x), y(y), width(w), height(h), isHovered(false) {}
-        virtual ~DynamicObject() {}
+class DynamicObject : public StaticObject {
+  protected:
+    bool isHovered;
 
-        virtual void Initialize() = 0;
-        virtual void Update(float dt) = 0;
-        virtual void Render(SDL_Renderer* renderer) = 0;
+  public:
+    DynamicObject(int x, int y, int w, int h) : StaticObject(x, y, w, h), isHovered(false) {}
 
-        int GetX() const { return x; }
-        int GetY() const { return y; }
-        int GetWidth() const { return width; }
-        int GetHeight() const { return height; }
+    virtual ~DynamicObject() {}
+
+    virtual void Initialize() override = 0;
+
+    virtual void Update(float dt) override = 0;
+
+    virtual void Render(SDL_Renderer *renderer) override = 0;
+
+    bool IsHovered() const { return isHovered; }
+    void SetHovered(bool hovered) { isHovered = hovered; }
 };

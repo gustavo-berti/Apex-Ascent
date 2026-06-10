@@ -31,6 +31,12 @@ struct SummonPendingState {
     }
 };
 
+struct BattlePiles {
+    std::vector<Card *> drawPile;
+    std::vector<Card *> hand;
+    std::vector<Card *> discardPile;
+};
+
 class SceneBattle : public GameWorld {
   private:
     // ── Núcleo do jogo ────────────────────────────────────────────
@@ -66,9 +72,8 @@ class SceneBattle : public GameWorld {
     SummonPendingState summonPending;
 
     // ── Pilhas de cartas ──────────────────────────────────────────
-    std::vector<Card *> drawPile;
-    std::vector<Card *> hand;
-    std::vector<Card *> discardPile;
+    BattlePiles playerPiles;
+    BattlePiles opponentPiles;
     std::vector<Card *> cardObjects;
 
     // ── Callbacks do TurnManager ──────────────────────────────────
@@ -81,7 +86,7 @@ class SceneBattle : public GameWorld {
     void RunOpponentTurn();
 
     // ── Mana ──────────────────────────────────────────────────────
-    bool SpendPlayerMana(int cost, const std::string &cardName);
+    bool SpendMana(Entity *entity, int cost, const std::string &cardName);
 
     // ── Invocação e sacrifício ─────────────────────────────────────
     void TrySummonCard(Card *card, std::vector<Card *>::reverse_iterator handIt);
@@ -105,17 +110,19 @@ class SceneBattle : public GameWorld {
     bool HandleCancelClick(const SDL_Event &e);
     bool HandleHandCardClick(const SDL_Event &e);
     bool HandleBattleCardClick(const SDL_Event &e);
-
-    // Input específico do modo sacrifício
     bool HandleSummonPendingInput(const SDL_Event &e);
 
     // ── Deck ──────────────────────────────────────────────────────
     bool SetCurrentPlayerState(Player *p);
     void ResetBattleState();
-    void AddDeckCardToDrawPile(const std::string &cardId);
-    void BuildDrawPileFromPlayerDeck();
-    void ShuffleDrawPile();
-    void RearrangeHand(); // reposiciona cartas na mão após adição/remoção
+    void AddDeckCardToDrawPile(Entity* owner, const std::string &cardId);
+    void BuildDrawPile(Entity *entity);
+    void ShuffleDrawPile(Entity* entity);
+    void RearrangeHand();
+        BattlePiles& GetPilesFor(Entity* entity) {
+        if (entity == currentState) return playerPiles;
+        return opponentPiles;
+    }
 
     // ── Render ────────────────────────────────────────────────────
     void RenderButtons(SDL_Renderer *renderer) const;
@@ -124,7 +131,7 @@ class SceneBattle : public GameWorld {
     void RenderMana(SDL_Renderer *renderer) const;
     void RenderHealthBars(SDL_Renderer *renderer) const;
     void RenderOutcome(SDL_Renderer *renderer) const;
-    void RenderSummonPending(SDL_Renderer *renderer) const; // <<< NOVO
+    void RenderSummonPending(SDL_Renderer *renderer) const;
     void RenderButton(SDL_Renderer *renderer, SDL_Rect r, Uint8 red, Uint8 grn, Uint8 blu,
                       bool enabled = true) const;
     void RenderText(SDL_Renderer *renderer, TTF_Font *f, const char *text, SDL_Color color, int x,
@@ -138,7 +145,6 @@ class SceneBattle : public GameWorld {
     void HandleInput(SDL_Event &e) override;
     void Update(float dt) override;
     void Render(SDL_Renderer *renderer) override;
-
     void StartBattle(Player *state, Opponent *opp, SDL_Renderer *renderer);
-    void DrawCards(int amount);
+    void DrawCards(Entity *entity, int amount);
 };
