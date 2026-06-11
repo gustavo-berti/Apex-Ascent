@@ -65,26 +65,26 @@ void SceneBattle::Initialize(SDL_Renderer *renderer) {
 
 void SceneBattle::StartBattle(Player *playerState, Opponent *opp, SDL_Renderer *sdlRenderer) {
     if (!SetCurrentPlayerState(playerState)) return;
-    if (!opp) {
-        std::cerr << "Opponent invalido." << std::endl;
-        return;
-    }
+    if (!opp) return;
 
     opponent = opp;
     this->renderer = sdlRenderer;
     outcome = BattleOutcome::ONGOING;
     summonPending.Clear();
-
+    opponent->SetDeck(Race::PIXIE, 1);
     ResetBattleState();
+
     BuildDrawPile(currentState);
+    BuildDrawPile(opponent);
+
     ShuffleDrawPile(currentState);
+    ShuffleDrawPile(opponent);
+
     DrawCards(currentState, 5);
+    DrawCards(opponent, 5);
 
     srand(static_cast<unsigned>(SDL_GetTicks()));
     turnManager.RollForFirstTurn();
-    std::cout << "=== SORTEIO: " << turnManager.GetOwnerName() << " comeca! ===" << std::endl;
-    std::cout << "[BATALHA] Oponente e " << (opponent->isGuardian ? "GUARDIAO" : "normal")
-              << " | HP: " << opponent->currentHealth << "/" << opponent->maxHealth << std::endl;
 
     if (turnManager.IsPlayerTurn())
         HandleTurnStart();
@@ -114,10 +114,22 @@ void SceneBattle::OnCombatStepChanged(CombatStep step) {
         board.ResolveDefenders();
         turnManager.AdvanceCombatStep();
     }
+
     if (step == CombatStep::RESOLUTION) {
-        CombatResult result = board.ResolveCombat(opponent->currentHealth, cardObjects);
+        int &healthTarget =
+            turnManager.IsPlayerTurn() ? opponent->currentHealth : currentState->currentHealth;
+        CombatResult result = board.ResolveCombat(healthTarget, cardObjects);
+
+        if (result.damageDealt > 0) {
+            std::string targetName = turnManager.IsPlayerTurn() ? "Oponente" : "Jogador";
+            std::cout << "[BATALHA] " << targetName << " recebeu " << result.damageDealt
+                      << " de dano!" << std::endl;
+        }
         CheckBattleOutcome(result);
-        if (!IsBattleOver()) turnManager.AdvancePhase();
+
+        if (!IsBattleOver()) {
+            turnManager.AdvancePhase();
+        }
     }
 }
 
@@ -162,16 +174,89 @@ void SceneBattle::HandleTurnStart() {
 }
 
 void SceneBattle::RunOpponentTurn() {
-    std::cout << "[OPONENTE] Turno automatico..." << std::endl;
-    opponent->mana.OnTurnStart(turnManager.ShouldGainManaThisTurn());
+    std::cout << "\n===================================" << std::endl;
+    std::cout << "[OPONENTE] Iniciando turno da IA..." << std::endl;
+    
+    bool gainMana = turnManager.ShouldGainManaThisTurn();
+    opponent->mana.OnTurnStart(gainMana);
+    std::cout << "[IA] Mana atual: " << opponent->mana.current << "/" << opponent->mana.total << std::endl;
+    
+    if (turnManager.ShouldDrawThisTurn()) {
+        DrawCards(opponent, opponent->GetTurnStartDrawCount());
+    }
+
     turnManager.AdvancePhase();
+    
+    auto& hand = opponentPiles.hand;
+    auto& prep = board.enemyPreparationCards;
+    auto arrangeZone = [](std::vector<Card*>& cards, const SDL_Rect& zone) {
+        int n = cards.size();
+        if (n == 0) return;
+        int cw = 100, gap = 15;
+        int totalW = n * cw + (n - 1) * gap;
+        int startX = zone.x + (zone.w - totalW) / 2;
+        int y = zone.y + (zone.h - 140) / 2;
+        for (int i = 0; i < n; ++i) {
+            cards[i]->SetPosition(startX + i * (cw + gap), y);
+        }
+    };
+    
+    std::cout << "[IA] Avaliando " << hand.size() << " carta(s) na mao (Ordem FIFO)..." << std::endl;
+    
+    for (auto it = hand.begin(); it != hand.end(); ) {
+        Card* card = *it;
+        bool isCreature = dynamic_cast<CreatureCard*>(card) != nullptr;
+        
+        if (!isCreature) {
+            ++it;
+            continue;
+        }
+        
+        if (prep.size() >= 6) {
+            std::cout << "[IA] Campo cheio." << std::endl;
+            break; 
+        }
+        
+        if (opponent->mana.CanAfford(card->GetManaCost())) {
+            SpendMana(opponent, card->GetManaCost(), card->GetName());            
+            prep.push_back(card);
+            it = hand.erase(it);
+            arrangeZone(prep, enemyPreparationZone);
+            
+            std::cout << "[IA] >>> INVOCOU: " << card->GetName() << " (Visível no campo!)" << std::endl;
+        } else {
+            ++it; 
+        }
+    }
+    
     turnManager.AdvancePhase();
-    turnManager.AdvancePhase();
-    turnManager.AdvancePhase();
+    
+    int enemyCount = board.enemyPreparationCards.size() + board.enemyBattleCards.size();
+    int playerCount = board.playerPreparationCards.size() + board.playerBattleCards.size();
+    
+    if (enemyCount > playerCount && enemyCount > 0) {
+        std::cout << "[IA] Vantagem numerica. ATACANDO!" << std::endl;
+        
+        for (Card* card : board.enemyPreparationCards) {
+            board.enemyBattleCards.push_back(card);
+        }
+        board.enemyPreparationCards.clear();
+    
+        arrangeZone(board.enemyBattleCards, enemyBattleZone);
+        arrangeZone(board.enemyPreparationCards, enemyPreparationZone); 
+        
+        turnManager.AdvanceCombatStep(); 
+    } else {
+        std::cout << "[IA] Sem vantagem (" << enemyCount << " vs " << playerCount << "). Abortou o ataque." << std::endl;
+        turnManager.AdvancePhase(); 
+        turnManager.AdvancePhase(); 
+        turnManager.AdvancePhase();
+    }
+    std::cout << "===================================\n" << std::endl;
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  Mana 
+//  Mana
 // ═══════════════════════════════════════════════════════════════════
 
 bool SceneBattle::SpendMana(Entity *entity, int cost, const std::string &cardName) {
@@ -681,7 +766,7 @@ void SceneBattle::ResetBattleState() {
     if (opponent) opponent->Reset();
 }
 
-void SceneBattle::AddDeckCardToDrawPile(Entity* owner, const std::string &cardId) {
+void SceneBattle::AddDeckCardToDrawPile(Entity *owner, const std::string &cardId) {
     int id = 0;
     try {
         id = std::stoi(cardId);
@@ -700,7 +785,6 @@ void SceneBattle::AddDeckCardToDrawPile(Entity* owner, const std::string &cardId
         return;
     }
     if (!card) return;
-    card->SetPosition(-200, -200);
     GetPilesFor(owner).drawPile.push_back(card);
     objects.push_back(card);
     cardObjects.push_back(card);
@@ -722,18 +806,17 @@ void SceneBattle::ShuffleDrawPile(Entity* entity) {
 
 void SceneBattle::DrawCards(Entity *entity, int amount) {
     if (!entity || amount <= 0) return;
-    auto& piles = GetPilesFor(entity);
+    auto &piles = GetPilesFor(entity);
 
     for (int i = 0; i < amount; ++i) {
-        if (piles.drawPile.empty()) break; // Num jogo completo, embaralharia o discardPile aqui
-
+        if (piles.drawPile.empty()) break;
         Card *card = piles.drawPile.back();
         piles.drawPile.pop_back();
 
         if (entity->IsHandFull(static_cast<int>(piles.hand.size()))) {
-            // Mao cheia
             objects.erase(std::remove(objects.begin(), objects.end(), card), objects.end());
-            cardObjects.erase(std::remove(cardObjects.begin(), cardObjects.end(), card), cardObjects.end());
+            cardObjects.erase(std::remove(cardObjects.begin(), cardObjects.end(), card),
+                              cardObjects.end());
             delete card;
         } else {
             piles.hand.push_back(card);
