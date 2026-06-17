@@ -321,6 +321,326 @@
             ]
         },
         {
+            "id": 11,
+            "display_name": "Brincalhona",
+            "image_path": "assets/images/cards/creatures/pixie/brincalhona.png",
+            "race": "PIXIE",
+            "rarity": "UNCOMMON",
+            "description": "Sempre pregando peças nos humanos que encontra",
+            "mana": 1,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 1,
+                    "health": 2,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 2,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 3,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 12,
+            "display_name": "Amiga das Protetoras",
+            "image_path": "assets/images/cards/creatures/pixie/amiga_das_protetoras.png",
+            "race": "PIXIE",
+            "rarity": "UNCOMMON",
+            "description": "Por passar tanto tempo com as Dríades se tornou amiga delas",
+            "mana": 4,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 4,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 5,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 6,
+                    "health": 6,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 13,
+            "display_name": "Rola-Pedra",
+            "image_path": "assets/images/cards/creatures/dragon/rola_pedra.png",
+            "race": "DRAGON",
+            "rarity": "UNCOMMON",
+            "description": "'Essa espécie utiliza de grande rochas para fazer seu lar no meio de uma floresta' - Ernest",
+            "mana": 5,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 5,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 6,
+                    "health": 6,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 7,
+                    "health": 7,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 14,
+            "display_name": "Dragão da Colina",
+            "image_path": "assets/images/cards/creatures/dragon/dragao_da_colina.png",
+            "race": "DRAGON",
+            "rarity": "UNCOMMON",
+            "description": "'Encontrei essa espécie ao andar nas colinas de Everfrost, não parece ter nada de especial além de sua força' - Ernest",
+            "mana": 5,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 5,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 6,
+                    "health": 6,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 7,
+                    "health": 7,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 15,
+            "display_name": "Soldado da Guarda",
+            "image_path": "assets/images/cards/creatures/human/soldado_da_guarda.png",
+            "race": "HUMAN",
+            "rarity": "UNCOMMON",
+            "description": "Só passa pelo portão se tiver autorização",
+            "mana": 5,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 5,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 6,
+                    "health": 6,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 7,
+                    "health": 7,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 16,
+            "display_name": "Discípulo do Clã Akamatsu",
+            "image_path": "assets/images/cards/creatures/human/discipulo_cla_akamatsu.png",
+            "race": "HUMAN",
+            "rarity": "UNCOMMON",
+            "description": "Queria ser tão forte quanto Muk",
+            "mana": 3,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 3,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 4,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 5,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 17,
+            "display_name": "Pequena Automata",
+            "image_path": "assets/images/cards/creatures/automat/pequena_automata.png",
+            "race": "AUTOMAT",
+            "rarity": "UNCOMMON",
+            "description": "Porque raios criaram uma criança automata?",
+            "mana": 1,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 2,
+                    "health": 2,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 2,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 4,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 18,
+            "display_name": "Gatomata",
+            "image_path": "assets/images/cards/creatures/automat/gatomata.png",
+            "race": "AUTOMAT",
+            "rarity": "UNCOMMON",
+            "description": "O melhor automato do homem",
+            "mana": 3,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 3,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 4,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 5,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 19,
+            "display_name": "Protetora Isolada",
+            "image_path": "assets/images/cards/creatures/dryad/protetora_isolada.png",
+            "race": "DRYAD",
+            "rarity": "UNCOMMON",
+            "description": "A última sobrevivente da queimada de uma floresta",
+            "mana": 3,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 1,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 3,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 5,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 20,
+            "display_name": "Protetora Ilusionista",
+            "image_path": "assets/images/cards/creatures/dryad/protetora_ilusionista.png",
+            "race": "DRYAD",
+            "rarity": "UNCOMMON",
+            "description": "Assume forma de um humano para enganá-los junto com uma certa Fada",
+            "mana": 2,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 2,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 3,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 4,
+                    "health": 6,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
             "id": 21,
             "display_name": "Asas Benevolentes",
             "image_path": "assets/images/cards/creatures/pixie/asas_benevolentes.png",
