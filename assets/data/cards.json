@@ -33,6 +33,294 @@
             ]
         },
         {
+            "id": 2,
+            "display_name": "Pequena Florista",
+            "image_path": "assets/images/cards/creatures/pixie/pequena_florista.png",
+            "race": "PIXIE",
+            "rarity": "COMMON",
+            "description": "Ninguém cuida melhor das flores do que ela",
+            "mana": 2,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 2,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 3,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 4,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "display_name": "Cospe-Fogo",
+            "image_path": "assets/images/cards/creatures/dragon/cospe_fogo.png",
+            "race": "DRAGON",
+            "rarity": "COMMON",
+            "description": "'Graças a sua vivência em regiões vulcânicas essa espécie se adaptou tão bem ao fogo que é capaz de comê-lo' - Ernest",
+            "mana": 6,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 6,
+                    "health": 6,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 7,
+                    "health": 7,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 8,
+                    "health": 8,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "display_name": "Derrete-Lâminas",
+            "image_path": "assets/images/cards/creatures/dragon/derrete_laminas.png",
+            "race": "DRAGON",
+            "rarity": "COMMON",
+            "description": "'De alguma maneira, esse dragão solta um líquido tão ácido que é capaz de derreter as armaduras de um grande guerreiro' - Ernest",
+            "mana": 5,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 6,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 8,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 9,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "display_name": "Soldado Aprendiz",
+            "image_path": "assets/images/cards/creatures/human/soldado_aprendiz.png",
+            "race": "HUMAN",
+            "rarity": "COMMON",
+            "description": "Eu não vou desistir agora!",
+            "mana": 1,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 1,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 2,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 3,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 6,
+            "display_name": "Muk, o Genin",
+            "image_path": "assets/images/cards/creatures/human/muk_genin.png",
+            "race": "HUMAN",
+            "rarity": "COMMON",
+            "description": "Desistiu da magia para virar um discípulo do Clã Akamatsu",
+            "mana": 2,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 2,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 4,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 5,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 7,
+            "display_name": "Golem Coletor",
+            "image_path": "assets/images/cards/creatures/automat/golem_coletor.png",
+            "race": "AUTOMAT",
+            "rarity": "COMMON",
+            "description": "Esses bichinhos coletam tudo que cai no chão e guardam em sua barriga",
+            "mana": 2,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 1,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 2,
+                    "health": 6,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 3,
+                    "health": 6,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 8,
+            "display_name": "Golem Lutador",
+            "image_path": "assets/images/cards/creatures/automat/golem_lutador.png",
+            "race": "AUTOMAT",
+            "rarity": "COMMON",
+            "description": "Um automato que luta nos ringues contra outros automatos em busca de se tornar o campeão",
+            "mana": 4,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 4,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 5,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 6,
+                    "health": 6,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 9,
+            "display_name": "Pequeno Protetor",
+            "image_path": "assets/images/cards/creatures/dryad/pequeno_protetor.png",
+            "race": "DRYAD",
+            "rarity": "COMMON",
+            "description": "De acordo com fadas ele se parece com um esquilo",
+            "mana": 1,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 2,
+                    "health": 2,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 3,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 4,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 10,
+            "display_name": "Grande Protetor Fofo",
+            "image_path": "assets/images/cards/creatures/dryad/grande_protetor_fofo.png",
+            "race": "DRYAD",
+            "rarity": "COMMON",
+            "description": "Não gosta de aparecer por causa da sua aparência",
+            "mana": 4,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 2,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 2,
+                    "health": 7,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 2,
+                    "health": 9,
+                    "abilities": [],
+                    "effects": []
+                }
+            ]
+        },
+        {
             "id": 21,
             "display_name": "Asas Benevolentes",
             "image_path": "assets/images/cards/creatures/pixie/asas_benevolentes.png",
