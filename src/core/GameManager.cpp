@@ -7,6 +7,7 @@ GameManager::GameManager() {
     window = nullptr;
     renderer = nullptr;
     currentWorld = nullptr;
+    backgroundMusic = nullptr;
     isRunning = false;
 }
 
@@ -40,8 +41,20 @@ bool GameManager::Initialize(const char *title, int x, int y, int width, int hei
             SDL_RenderSetLogicalSize(renderer, width, height);
         }
 
+        if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
+            std::cerr << "Falha ao inicializar o Audio do SDL: " << SDL_GetError() << std::endl;
+            return false;
+        }
+
+        if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+            std::cerr << "Falha ao inicializar o SDL_mixer: " << Mix_GetError() << std::endl;
+            return false;
+        }
+
+        
         isRunning = true;
         opponent.SetGuardian(false);
+        ChangeMusic("assets/audio/menu_theme.mp3");
 
         SceneMenu *menu = new SceneMenu(*this);
         menu->Initialize(renderer);
@@ -139,9 +152,35 @@ void GameManager::Clean() {
         delete currentWorld;
         currentWorld = nullptr;
     }
+
+    if (backgroundMusic != nullptr) {
+        Mix_HaltMusic();
+        Mix_FreeMusic(backgroundMusic);
+        backgroundMusic = nullptr;
+    }
+
+    Mix_CloseAudio();
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
-    TTF_Quit(); // Finaliza SDL_ttf
+    TTF_Quit();
     SDL_Quit();
     std::cout << "Jogo finalizado." << std::endl;
+}
+
+void GameManager::ChangeMusic(const std::string &filepath) {
+    if (backgroundMusic != nullptr) {
+        Mix_HaltMusic();
+        Mix_FreeMusic(backgroundMusic);
+        backgroundMusic = nullptr;
+    }
+
+    if (!filepath.empty()) {
+        backgroundMusic = Mix_LoadMUS(filepath.c_str());
+        if (backgroundMusic) {
+            Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
+            Mix_PlayMusic(backgroundMusic, -1);
+        } else {
+            std::cerr << "[ÁUDIO] Falha ao trocar música: " << Mix_GetError() << std::endl;
+        }
+    }
 }

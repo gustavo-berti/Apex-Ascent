@@ -3,6 +3,7 @@
 #include "../logic/Player.hpp"
 #include "GameWorld.hpp"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
 
 class GameManager {
   private:
@@ -12,6 +13,7 @@ class GameManager {
     SDL_Window *window;
     SDL_Renderer *renderer;
     GameWorld *currentWorld;
+    Mix_Music* backgroundMusic;
 
   public:
     GameManager();
@@ -30,4 +32,5 @@ class GameManager {
     Player &GetPlayer() { return player; }
     Opponent &GetOpponent() { return opponent; }
     void SetOpponentDeck(Race type, int part) { opponent.SetDeck(type, part); }
+    void ChangeMusic(const std::string &filePath);
 };
