@@ -2,6 +2,9 @@
 #include "../scenes/SceneMenu.hpp"
 #include <SDL2/SDL_ttf.h>
 #include <iostream>
+#include <unordered_map>
+
+std::unordered_map<std::string, Mix_Chunk*> GameManager::soundEffects;
 
 GameManager::GameManager() {
     window = nullptr;
@@ -54,7 +57,8 @@ bool GameManager::Initialize(const char *title, int x, int y, int width, int hei
         
         isRunning = true;
         opponent.SetGuardian(false);
-        ChangeMusic("assets/audio/menu_theme.mp3");
+        ChangeMusic("assets/audio/music/menu_theme.mp3");
+        LoadSFX("card_place", "assets/audio/sfx/card_place.wav");
 
         SceneMenu *menu = new SceneMenu(*this);
         menu->Initialize(renderer);
@@ -147,25 +151,6 @@ void GameManager::ToggleFullscreen() {
     }
 }
 
-void GameManager::Clean() {
-    if (currentWorld) {
-        delete currentWorld;
-        currentWorld = nullptr;
-    }
-
-    if (backgroundMusic != nullptr) {
-        Mix_HaltMusic();
-        Mix_FreeMusic(backgroundMusic);
-        backgroundMusic = nullptr;
-    }
-
-    Mix_CloseAudio();
-    SDL_DestroyWindow(window);
-    SDL_DestroyRenderer(renderer);
-    TTF_Quit();
-    SDL_Quit();
-    std::cout << "Jogo finalizado." << std::endl;
-}
 
 void GameManager::ChangeMusic(const std::string &filepath) {
     if (backgroundMusic != nullptr) {
@@ -183,4 +168,49 @@ void GameManager::ChangeMusic(const std::string &filepath) {
             std::cerr << "[ÁUDIO] Falha ao trocar música: " << Mix_GetError() << std::endl;
         }
     }
+}
+
+void GameManager::LoadSFX(const std::string& name, const std::string& filepath) {
+    Mix_Chunk* chunk = Mix_LoadWAV(filepath.c_str());
+    if (chunk != nullptr) {
+        soundEffects[name] = chunk;
+    } else {
+        std::cerr << "[ÁUDIO] Falha ao carregar SFX (" << filepath << "): " << Mix_GetError() << std::endl;
+    }
+}
+
+void GameManager::PlaySFX(const std::string& name) {
+    if (soundEffects.find(name) != soundEffects.end()) {
+        Mix_PlayChannel(-1, soundEffects[name], 0);
+    } else {
+        std::cerr << "[ÁUDIO] Efeito sonoro '" << name << "' nao encontrado!" << std::endl;
+    }
+}
+
+void GameManager::ClearSFX() {
+    for (auto& pair : soundEffects) {
+        Mix_FreeChunk(pair.second);
+    }
+    soundEffects.clear();
+}
+
+void GameManager::Clean() {
+    if (currentWorld) {
+        delete currentWorld;
+        currentWorld = nullptr;
+    }
+
+    if (backgroundMusic != nullptr) {
+        Mix_HaltMusic();
+        Mix_FreeMusic(backgroundMusic);
+        backgroundMusic = nullptr;
+    }
+
+    Mix_CloseAudio();
+    SDL_DestroyWindow(window);
+    SDL_DestroyRenderer(renderer);
+    TTF_Quit();
+    SDL_Quit();
+    ClearSFX();
+    std::cout << "Jogo finalizado." << std::endl;
 }
