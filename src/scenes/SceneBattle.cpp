@@ -76,23 +76,15 @@ void SceneBattle::StartBattle(Player *playerState, Opponent *opp, SDL_Renderer *
     summonPending.Clear();
 
     ResetBattleState();
-    BuildDrawPileFromPlayerDeck();
-    ShuffleDrawPile();
-    DrawCards(5);
+    BuildDrawPile(currentState);
+    ShuffleDrawPile(currentState);
+    DrawCards(currentState, 5);
 
     srand(static_cast<unsigned>(SDL_GetTicks()));
     turnManager.RollForFirstTurn();
     std::cout << "=== SORTEIO: " << turnManager.GetOwnerName() << " comeca! ===" << std::endl;
     std::cout << "[BATALHA] Oponente e " << (opponent->isGuardian ? "GUARDIAO" : "normal")
               << " | HP: " << opponent->currentHealth << "/" << opponent->maxHealth << std::endl;
-
-    if (turnManager.GetFirstOwner() == TurnOwner::PLAYER) {
-        opponent->mana.total = 2;
-        opponent->mana.current = 2;
-    } else {
-        currentState->mana.total = 2;
-        currentState->mana.current = 2;
-    }
 
     if (turnManager.IsPlayerTurn())
         HandleTurnStart();
@@ -139,12 +131,14 @@ void SceneBattle::CheckBattleOutcome(const CombatResult &result) {
                   << " de dano. HP: " << opponent->currentHealth << "/" << opponent->maxHealth
                   << std::endl;
     }
+
     if (opponent->IsDefeated()) {
         outcome = BattleOutcome::PLAYER_WIN;
         std::cout << "=== JOGADOR VENCEU! ===" << std::endl;
         return;
     }
-    if (currentState->currentHealth <= 0) {
+
+    if (currentState->IsDefeated()) {
         outcome = BattleOutcome::PLAYER_LOSE;
         std::cout << "=== JOGADOR PERDEU! ===" << std::endl;
     }
@@ -160,7 +154,9 @@ void SceneBattle::HandleTurnStart() {
     std::cout << "[INICIO DE TURNO] Mana: " << currentState->mana.current << "/"
               << currentState->mana.total << (gainMana ? "" : " (1o turno)") << std::endl;
 
-    if (turnManager.ShouldDrawThisTurn()) DrawCards(currentState->GetTurnStartDrawCount());
+    if (turnManager.ShouldDrawThisTurn()) {
+        DrawCards(currentState, currentState->GetTurnStartDrawCount());
+    }
 
     turnManager.AdvancePhase();
 }
@@ -175,18 +171,18 @@ void SceneBattle::RunOpponentTurn() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  Mana
+//  Mana 
 // ═══════════════════════════════════════════════════════════════════
 
-bool SceneBattle::SpendPlayerMana(int cost, const std::string &cardName) {
-    if (!currentState->mana.CanAfford(cost)) {
+bool SceneBattle::SpendMana(Entity *entity, int cost, const std::string &cardName) {
+    if (!entity->mana.CanAfford(cost)) {
         std::cout << "[MANA] Insuficiente para " << cardName << " (custo: " << cost
-                  << ", disponivel: " << currentState->mana.current << ")" << std::endl;
+                  << ", disponivel: " << entity->mana.current << ")" << std::endl;
         return false;
     }
-    currentState->mana.Spend(cost);
-    std::cout << "[MANA] Gastou " << cost << " em " << cardName << " ("
-              << currentState->mana.current << "/" << currentState->mana.total << ")" << std::endl;
+    entity->mana.Spend(cost);
+    std::cout << "[MANA] Gastou " << cost << " em " << cardName << " (" << entity->mana.current
+              << "/" << entity->mana.total << ")" << std::endl;
     return true;
 }
 
@@ -195,15 +191,13 @@ bool SceneBattle::SpendPlayerMana(int cost, const std::string &cardName) {
 // ═══════════════════════════════════════════════════════════════════
 
 void SceneBattle::TrySummonCard(Card *card, std::vector<Card *>::reverse_iterator handIt) {
-    // Campo com espaço → invoca diretamente
     if (board.playerPreparationCards.size() < 6) {
-        if (!SpendPlayerMana(card->GetManaCost(), card->GetName())) return;
+        if (!SpendMana(currentState, card->GetManaCost(), card->GetName())) return;
 
         if (board.AddToPlayerPreparation(card, cardObjects)) {
-            hand.erase(std::next(handIt).base());
+            playerPiles.hand.erase(std::next(handIt).base());
             RearrangeHand();
         } else {
-            // Devolveu a mana pois o board recusou por algum motivo interno
             currentState->mana.current += card->GetManaCost();
         }
         return;
@@ -227,7 +221,7 @@ void SceneBattle::ConfirmSummon() {
     Card *toSummon = summonPending.cardToSummon;
     Card *toSacrifice = summonPending.cardToSacrifice;
 
-    if (!SpendPlayerMana(toSummon->GetManaCost(), toSummon->GetName())) {
+    if (!SpendMana(currentState, toSummon->GetManaCost(), toSummon->GetName())) {
         CancelSummon();
         return;
     }
@@ -236,13 +230,13 @@ void SceneBattle::ConfirmSummon() {
     auto it = std::find(prep.begin(), prep.end(), toSacrifice);
     if (it != prep.end()) {
         prep.erase(it);
-        discardPile.push_back(toSacrifice);
+        playerPiles.discardPile.push_back(toSacrifice);
         std::cout << "[SACRIFICIO] " << toSacrifice->GetName() << " foi enviada ao cemiterio."
                   << std::endl;
     }
 
-    auto handIt = std::find(hand.begin(), hand.end(), toSummon);
-    if (handIt != hand.end()) hand.erase(handIt);
+    auto handIt = std::find(playerPiles.hand.begin(), playerPiles.hand.end(), toSummon);
+    if (handIt != playerPiles.hand.end()) playerPiles.hand.erase(handIt);
 
     board.AddToPlayerPreparation(toSummon, cardObjects);
     RearrangeHand();
@@ -256,14 +250,13 @@ void SceneBattle::CancelSummon() {
     summonPending.Clear();
 }
 
-// Reorganiza as cartas na mão após remoção
 void SceneBattle::RearrangeHand() {
-    int n = hand.size(), cw = 100, gap = 15;
+    int n = playerPiles.hand.size(), cw = 100, gap = 15;
     int totalW = n * cw + (n - 1) * gap;
     int startX = playerHandZone.x + (playerHandZone.w - totalW) / 2;
     int y = playerHandZone.y + (playerHandZone.h - 140) / 2;
     for (int i = 0; i < n; ++i)
-        hand[i]->SetPosition(startX + i * (cw + gap), y);
+        playerPiles.hand[i]->SetPosition(startX + i * (cw + gap), y);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -396,7 +389,7 @@ bool SceneBattle::HandleCancelClick(const SDL_Event &e) {
 }
 
 bool SceneBattle::HandleHandCardClick(const SDL_Event &e) {
-    for (auto it = hand.rbegin(); it != hand.rend(); ++it) {
+    for (auto it = playerPiles.hand.rbegin(); it != playerPiles.hand.rend(); ++it) {
         Card *card = *it;
         if (!card) continue;
 
@@ -408,7 +401,7 @@ bool SceneBattle::HandleHandCardClick(const SDL_Event &e) {
         if (isCreature && CanPlayCreature()) {
             TrySummonCard(card, it);
         } else if (!isCreature && CanPlaySpell()) {
-            if (!SpendPlayerMana(card->GetManaCost(), card->GetName())) return true;
+            if (!SpendMana(currentState, card->GetManaCost(), card->GetName())) return true;
             std::cout << "[MAGIA] " << card->GetName() << " jogada (efeito pendente)." << std::endl;
         } else {
             std::cout << "[AVISO] Nao e possivel jogar essa carta agora." << std::endl;
@@ -518,7 +511,7 @@ void SceneBattle::RenderSummonPending(SDL_Renderer *renderer) const {
 }
 
 void SceneBattle::RenderHand(SDL_Renderer *renderer) const {
-    for (auto *c : hand)
+    for (auto *c : playerPiles.hand)
         c->Render(renderer);
 }
 
@@ -554,7 +547,6 @@ void SceneBattle::RenderButtons(SDL_Renderer *renderer) const {
 void SceneBattle::RenderHealthBars(SDL_Renderer *renderer) const {
     if (!currentState || !opponent || !fontSmall) return;
 
-    // ── HP do oponente (posição superior esquerda, abaixo do painel de turno) ─────────
     {
         char hpText[64];
         snprintf(hpText, sizeof(hpText), "Oponente: %d/%d", opponent->currentHealth,
@@ -564,12 +556,11 @@ void SceneBattle::RenderHealthBars(SDL_Renderer *renderer) const {
         ui::UIRenderUtils::RenderText(renderer, hpText, 10, 90, color, fontSmall);
     }
 
-    // ── HP do jogador (canto inferior esquerdo) ────────────────────
     {
         char hpText[64];
         snprintf(hpText, sizeof(hpText), "Você: %d/%d", currentState->currentHealth,
                  currentState->maxHealth);
-        SDL_Color color{50, 200, 80, 255}; // verde para jogador
+        SDL_Color color{50, 200, 80, 255};
         ui::UIRenderUtils::RenderText(renderer, hpText, 10, 870, color, fontSmall);
     }
 }
@@ -648,11 +639,9 @@ void SceneBattle::RenderOutcome(SDL_Renderer *renderer) const {
     SDL_RenderFillRect(renderer, &full);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
-    // Renderiza texto baseado no resultado
-    const char *text = (outcome == BattleOutcome::PLAYER_WIN) ? "VITÓRIA!" : "DERROTA!";
-    SDL_Color color = (outcome == BattleOutcome::PLAYER_WIN)
-                          ? SDL_Color{30, 255, 60, 255}  // verde para vitória
-                          : SDL_Color{255, 50, 50, 255}; // vermelho para derrota
+    const char *text = (outcome == BattleOutcome::PLAYER_WIN) ? "VITORIA!" : "DERROTA!";
+    SDL_Color color = (outcome == BattleOutcome::PLAYER_WIN) ? SDL_Color{30, 255, 60, 255}
+                                                             : SDL_Color{255, 50, 50, 255};
 
     int textW = 0;
     int textH = 0;
@@ -663,7 +652,7 @@ void SceneBattle::RenderOutcome(SDL_Renderer *renderer) const {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  Deck / cartas
+//  Deck
 // ═══════════════════════════════════════════════════════════════════
 
 bool SceneBattle::SetCurrentPlayerState(Player *p) {
@@ -679,18 +668,20 @@ void SceneBattle::ResetBattleState() {
     for (auto *obj : objects)
         delete obj;
     objects.clear();
+    playerPiles.drawPile.clear();
+    playerPiles.hand.clear();
+    playerPiles.discardPile.clear();
+    opponentPiles.drawPile.clear();
+    opponentPiles.hand.clear();
+    opponentPiles.discardPile.clear();
     cardObjects.clear();
-    drawPile.clear();
-    hand.clear();
-    discardPile.clear();
     board.Reset();
     summonPending.Clear();
-
-    if (currentState) currentState->mana = ManaState{};
+    if (currentState) currentState->Reset();
     if (opponent) opponent->Reset();
 }
 
-void SceneBattle::AddDeckCardToDrawPile(const std::string &cardId) {
+void SceneBattle::AddDeckCardToDrawPile(Entity* owner, const std::string &cardId) {
     int id = 0;
     try {
         id = std::stoi(cardId);
@@ -710,48 +701,45 @@ void SceneBattle::AddDeckCardToDrawPile(const std::string &cardId) {
     }
     if (!card) return;
     card->SetPosition(-200, -200);
-    drawPile.push_back(card);
+    GetPilesFor(owner).drawPile.push_back(card);
     objects.push_back(card);
     cardObjects.push_back(card);
 }
 
-void SceneBattle::BuildDrawPileFromPlayerDeck() {
-    if (!currentState) return;
-    for (const auto &id : currentState->GetMasterDeck())
-        AddDeckCardToDrawPile(id);
-    std::cout << "[DECK] " << drawPile.size() << " carta(s) na pilha." << std::endl;
+void SceneBattle::BuildDrawPile(Entity *entity) {
+    if (!entity) return;
+    for (const auto &id : entity->GetMasterDeck()) {
+        AddDeckCardToDrawPile(entity, id);
+    }
 }
 
-void SceneBattle::ShuffleDrawPile() {
+void SceneBattle::ShuffleDrawPile(Entity* entity) {
+    auto& piles = GetPilesFor(entity);
     std::random_device rd;
     std::default_random_engine rng(rd());
-    std::shuffle(drawPile.begin(), drawPile.end(), rng);
+    std::shuffle(piles.drawPile.begin(), piles.drawPile.end(), rng);
 }
 
-void SceneBattle::DrawCards(int amount) {
-    if (!currentState || amount <= 0) return;
+void SceneBattle::DrawCards(Entity *entity, int amount) {
+    if (!entity || amount <= 0) return;
+    auto& piles = GetPilesFor(entity);
 
     for (int i = 0; i < amount; ++i) {
-        if (drawPile.empty()) {
-            std::cout << "Pilha vazia!" << std::endl;
-            break;
-        }
+        if (piles.drawPile.empty()) break; // Num jogo completo, embaralharia o discardPile aqui
 
-        Card *card = drawPile.back();
-        drawPile.pop_back();
+        Card *card = piles.drawPile.back();
+        piles.drawPile.pop_back();
 
-        if (currentState->IsHandFull(static_cast<int>(hand.size()))) {
-            std::cout << "Mao cheia! " << card->GetName() << " destruida." << std::endl;
+        if (entity->IsHandFull(static_cast<int>(piles.hand.size()))) {
+            // Mao cheia
             objects.erase(std::remove(objects.begin(), objects.end(), card), objects.end());
-            cardObjects.erase(std::remove(cardObjects.begin(), cardObjects.end(), card),
-                              cardObjects.end());
+            cardObjects.erase(std::remove(cardObjects.begin(), cardObjects.end(), card), cardObjects.end());
             delete card;
         } else {
-            hand.push_back(card);
+            piles.hand.push_back(card);
             if (renderer) card->LoadTexture(renderer);
-            std::cout << "Carta comprada: " << card->GetName() << std::endl;
         }
     }
 
-    RearrangeHand();
+    if (entity == currentState) RearrangeHand();
 }

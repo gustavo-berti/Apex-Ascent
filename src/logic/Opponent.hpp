@@ -1,23 +1,13 @@
 #pragma once
-#include "../logic/Player.hpp"
 #include "../objects/cards/types/CardTypes.hpp"
+#include "Entity.hpp"
 #include <random>
-#include <string>
-#include <vector>
 
 // ── Opponent ──────────────────────────────────────────────────────
-// A flag isGuardian é definida antes de StartBattle pelo sistema de mapa.
-
-struct Opponent {
-    static constexpr int BASE_HP = 30;
-    static constexpr int GUARDIAN_HP = 60; // guardião tem o dobro
-    int maxHealth = BASE_HP;
-    int currentHealth = BASE_HP;
+struct Opponent : public Entity {
     bool isGuardian = false;
     Race deckType = Race::NONE;
     int deckPart = 0;
-    ManaState mana; // simulado igualmente ao jogador
-    std::vector<std::string> masterDeck;
 
     static int RandomInt(int minValue, int maxValue) {
         if (minValue > maxValue) std::swap(minValue, maxValue);
@@ -93,48 +83,26 @@ struct Opponent {
 
         const int total_cards_per_deck = GetDeckSizeForPart(part, guardian);
         const int limitedSize = std::min(total_cards_per_deck, static_cast<int>(deck.size()));
+        deck.resize(limitedSize);
         return deck;
     }
 
-    // Construtor padrão: deck misto de base, ainda sem tipo/parte definidos
     Opponent() { masterDeck = BuildDeck(false, Race::NONE, 0); }
 
-    // Define se é guardião ANTES de iniciar a batalha.
-    // Ajusta o HP máximo e atual de acordo.
     void SetGuardian(bool guardian) {
         isGuardian = guardian;
-        maxHealth = guardian ? GUARDIAN_HP : BASE_HP;
+        maxHealth = 30;
+        if (isGuardian) {
+            maxHealth *= 2;
+        }
+
         currentHealth = maxHealth;
         masterDeck = BuildDeck(isGuardian, deckType, deckPart);
     }
 
-    // Escolhe o deck base pelo tipo e pela parte da area.
     void SetDeck(Race type, int part) {
         deckType = type;
         deckPart = part;
         masterDeck = BuildDeck(isGuardian, deckType, deckPart);
     }
-
-    // Recebe dano. Retorna true se morreu.
-    bool TakeDamage(int amount) {
-        currentHealth -= amount;
-        if (currentHealth < 0) currentHealth = 0;
-        return currentHealth <= 0;
-    }
-
-    bool IsDefeated() const { return currentHealth <= 0; }
-
-    // HP normalizado para barra [0.0, 1.0]
-    float GetHealthRatio() const {
-        if (maxHealth <= 0) return 0.0f;
-        return static_cast<float>(currentHealth) / static_cast<float>(maxHealth);
-    }
-
-    // Reset entre combates
-    void Reset() {
-        currentHealth = maxHealth;
-        mana = ManaState{};
-    }
-
-    const std::vector<std::string> &GetMasterDeck() const { return masterDeck; }
 };
