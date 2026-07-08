@@ -3,6 +3,9 @@
 #include "../logic/Player.hpp"
 #include "GameWorld.hpp"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
+#include <string>
+#include <unordered_map>
 
 class GameManager {
   private:
@@ -12,6 +15,8 @@ class GameManager {
     SDL_Window *window;
     SDL_Renderer *renderer;
     GameWorld *currentWorld;
+    Mix_Music* backgroundMusic;
+    static std::unordered_map<std::string, Mix_Chunk*> soundEffects;
 
   public:
     GameManager();
@@ -30,4 +35,8 @@ class GameManager {
     Player &GetPlayer() { return player; }
     Opponent &GetOpponent() { return opponent; }
     void SetOpponentDeck(Race type, int part) { opponent.SetDeck(type, part); }
+    void ChangeMusic(const std::string &filePath);
+    static void LoadSFX(const std::string& name, const std::string& filepath);
+    static void PlaySFX(const std::string& name);
+    static void ClearSFX();
 };

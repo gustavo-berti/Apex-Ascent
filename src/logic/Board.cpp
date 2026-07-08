@@ -1,6 +1,7 @@
 #include "Board.hpp"
 #include <algorithm>
 #include <iostream>
+#include "../core/GameManager.hpp"
 
 // ═══════════════════════════════════════════════════════════════════
 //  Construtor
@@ -82,6 +83,7 @@ bool Board::AddToPlayerPreparation(Card *card, std::vector<Card *> &objectsPool)
         std::cout << "[BOARD] Campo de preparacao cheio! (max 6)" << std::endl;
         return false;
     }
+    GameManager::PlaySFX("card_place");
     playerPreparationCards.push_back(card);
     OrganizeZone(playerPreparationCards, playerPreparationRect);
     std::cout << "[BOARD] " << card->GetName() << " entrou na preparacao." << std::endl;
