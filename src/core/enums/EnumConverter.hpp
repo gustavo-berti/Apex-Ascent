@@ -13,3 +13,4 @@ Rarity StringToRarity(const std::string &rarityType);
 CardType StringToCardType(const std::string &cardType);
 SpellSpeed StringToSpellType(const std::string &spellType);
 Ability StringToAbility(const std::string &abilityStr);
+DynamicScaling StringToDynamicScaling(const std::string &scalingStr);
