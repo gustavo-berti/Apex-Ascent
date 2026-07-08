@@ -1234,6 +1234,442 @@
             ]
         },
         {
+            "id": 31,
+            "display_name": "Pequena Trapaceira",
+            "image_path": "assets/images/cards/creatures/pixie/pequena_trapaceira.png",
+            "race": "PIXIE",
+            "rarity": "EPIC",
+            "description": "Uma fada que não está contente com sua própria magia, ainda quer a dos outros",
+            "mana": 3,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 2,
+                    "health": 2,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_SPELL_CAST",
+                            "action": "BUFF_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "health_bonus": 1
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 3,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_SPELL_CAST",
+                            "action": "BUFF_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "health_bonus": 1
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 4,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_SPELL_CAST",
+                            "action": "BUFF_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "health_bonus": 1
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 32,
+            "display_name": "Ilusionista",
+            "image_path": "assets/images/cards/creatures/pixie/ilusionista.png",
+            "race": "PIXIE",
+            "rarity": "EPIC",
+            "description": "Copia os outros por puro prazer junto com uma certa Dríade",
+            "mana": 5,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 0,
+                    "health": 0,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ENTER",
+                            "action": "COPY_STATS",
+                            "target": "ENEMY_CHOOSE",
+                            "condition": "NONE",
+                            "params": {}
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 0,
+                    "health": 0,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ENTER",
+                            "action": "COPY_STATS",
+                            "target": "ENEMY_CHOOSE",
+                            "condition": "NONE",
+                            "params": {}
+                        },
+                        {
+                            "trigger": "ON_EVOLUTION",
+                            "action": "BUFF_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "health_bonus": 1
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 0,
+                    "health": 0,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ENTER",
+                            "action": "COPY_STATS",
+                            "target": "ENEMY_CHOOSE",
+                            "condition": "NONE",
+                            "params": {}
+                        },
+                        {
+                            "trigger": "ON_EVOLUTION",
+                            "action": "BUFF_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "health_bonus": 1
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 33,
+            "display_name": "Suga-Sangue",
+            "image_path": "assets/images/cards/creatures/dragon/suga_sangue.png",
+            "race": "DRAGON",
+            "rarity": "EPIC",
+            "description": "'Parece que essa espécie fica mais forte conforme caça, mas ainda não tenho como comprovar esse fato' - Ernest",
+            "mana": 7,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 1,
+                    "health": 7,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_KILL",
+                            "action": "BUFF_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 1
+                            }
+                        },
+                        {
+                            "trigger": "ON_KILL",
+                            "action": "FULL_HEAL_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {}
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 1,
+                    "health": 9,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_KILL",
+                            "action": "BUFF_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 1
+                            }
+                        },
+                        {
+                            "trigger": "ON_KILL",
+                            "action": "FULL_HEAL_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {}
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 1,
+                    "health": 11,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_KILL",
+                            "action": "BUFF_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 1
+                            }
+                        },
+                        {
+                            "trigger": "ON_KILL",
+                            "action": "FULL_HEAL_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {}
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 34,
+            "display_name": "Casca Grossa",
+            "image_path": "assets/images/cards/creatures/dragon/casca_grossa.png",
+            "race": "DRAGON",
+            "rarity": "EPIC",
+            "description": "'De alguma forma as rochas no ambiente em que ele vive se grudam na sua pele o deixando completamente resistente' - Ernest",
+            "mana": 5,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 2,
+                    "health": 5,
+                    "abilities": [
+                        "SHIELD"
+                    ],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "BUFF_SHIELD_VALUE",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 2,
+                    "health": 7,
+                    "abilities": [
+                        "SHIELD"
+                    ],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "BUFF_SHIELD_VALUE",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 2,
+                    "health": 9,
+                    "abilities": [
+                        "SHIELD"
+                    ],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "BUFF_SHIELD_VALUE",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "amount": 1
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 35,
+            "display_name": "Muk, o Jonin",
+            "image_path": "assets/images/cards/creatures/human/muk_jonin.png",
+            "race": "HUMAN",
+            "rarity": "EPIC",
+            "description": "Atingiu o Ápice da espada do Clã Akamatsu, considerado por muitos como o sucessor do Grande Mestre",
+            "mana": 6,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 5,
+                    "health": 5,
+                    "abilities": [
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 6,
+                    "health": 6,
+                    "abilities": [
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 8,
+                    "health": 6,
+                    "abilities": [
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 36,
+            "display_name": "Capitão do Exército Real",
+            "image_path": "assets/images/cards/creatures/human/capitao_exercito_real.png",
+            "race": "HUMAN",
+            "rarity": "EPIC",
+            "description": "Como um dos melhores do exército do Rei tenho que cumprir meu dever com rapidez, eficiência e qualidade",
+            "mana": 8,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 7,
+                    "health": 5,
+                    "abilities": [
+                        "SHIELD",
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 8,
+                    "health": 6,
+                    "abilities": [
+                        "SHIELD",
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": []
+                },
+                {
+                    "level": 3,
+                    "attack": 9,
+                    "health": 7,
+                    "abilities": [
+                        "SHIELD",
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": []
+                }
+            ]
+        },
+        {
+            "id": 37,
+            "display_name": "Cozinheiro Falho",
+            "image_path": "assets/images/cards/creatures/automat/cozinheiro_falho.png",
+            "race": "AUTOMAT",
+            "rarity": "EPIC",
+            "description": "Aparentemente ele foi feito para auxiliar na cozinha, mas tudo que faz é venenoso",
+            "mana": 4,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 5,
+                    "health": 2,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_OPPONENT_PLAY",
+                            "action": "APPLY_STATUS_TO_ENEMY",
+                            "target": "ENEMY_JUST_PLAYED",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_apply": "ROT",
+                                "card_type_filter": "CREATURE"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 6,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_OPPONENT_PLAY",
+                            "action": "APPLY_STATUS_TO_ENEMY",
+                            "target": "ENEMY_JUST_PLAYED",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_apply": "ROT",
+                                "card_type_filter": "CREATURE"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 7,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_OPPONENT_PLAY",
+                            "action": "APPLY_STATUS_TO_ENEMY",
+                            "target": "ENEMY_JUST_PLAYED",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_apply": "ROT",
+                                "card_type_filter": "CREATURE"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
             "id": 38,
             "display_name": "Rato Mecânico",
             "race": "AUTOMAT",
@@ -1292,6 +1728,148 @@
                             "params": {
                                 "attack_bonus": 1,
                                 "count_threshold": 1
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 39,
+            "display_name": "Mapinguari",
+            "image_path": "assets/images/cards/creatures/dryad/mapinguari.png",
+            "race": "DRYAD",
+            "rarity": "EPIC",
+            "description": "Uma aberração que habita florestas densas e expulsa malfeitores",
+            "mana": 9,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 7,
+                    "health": 8,
+                    "abilities": [
+                        "PIERCING",
+                        "TERRIFY"
+                    ],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE_COND",
+                            "action": "BUFF_SELF_PER_COUNT",
+                            "target": "SELF",
+                            "condition": "COUNT_ALLIES_RACE_GTE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "count_threshold": 1,
+                                "race_filter": "DRYAD"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 7,
+                    "health": 10,
+                    "abilities": [
+                        "PIERCING",
+                        "TERRIFY"
+                    ],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE_COND",
+                            "action": "BUFF_SELF_PER_COUNT",
+                            "target": "SELF",
+                            "condition": "COUNT_ALLIES_RACE_GTE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "count_threshold": 1,
+                                "race_filter": "DRYAD"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 7,
+                    "health": 12,
+                    "abilities": [
+                        "PIERCING",
+                        "TERRIFY"
+                    ],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE_COND",
+                            "action": "BUFF_SELF_PER_COUNT",
+                            "target": "SELF",
+                            "condition": "COUNT_ALLIES_RACE_GTE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "count_threshold": 1,
+                                "race_filter": "DRYAD"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 40,
+            "display_name": "Protetora Encantada",
+            "image_path": "assets/images/cards/creatures/dryad/protetora_encantada.png",
+            "race": "DRYAD",
+            "rarity": "EPIC",
+            "description": "Um grande fluxo de magia passa na floresta na qual essa Dríade protege, por isso sua conexão com as magias é mais poderosa",
+            "mana": 2,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 2,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ENTER",
+                            "action": "DRAW_CARDS",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "draw_count": 2,
+                                "card_type_filter": "SPELL"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 3,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ENTER",
+                            "action": "DRAW_CARDS",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "draw_count": 2,
+                                "card_type_filter": "SPELL"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 4,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ENTER",
+                            "action": "DRAW_CARDS",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "draw_count": 2,
+                                "card_type_filter": "SPELL"
                             }
                         }
                     ]

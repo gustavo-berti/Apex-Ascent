@@ -2,6 +2,8 @@
 #include "CardTypes.hpp"
 #include <string>
 
+enum class DynamicScaling { NONE, KILLS_COUNT, DECAYED_COUNT, MISSING_HEALTH };
+
 enum class EffectTrigger {
     ON_ENTER,
     ON_ATTACK,
@@ -15,6 +17,9 @@ enum class EffectTrigger {
     ON_ROUND_END,
     PASSIVE,
     PASSIVE_COND,
+    ON_ALLY_DEATH,
+    ON_COMBAT_START,
+    ON_KILL_ENEMY
 };
 
 enum class EffectAction {
@@ -33,6 +38,12 @@ enum class EffectAction {
     DEAL_BONUS_DAMAGE,
     DOUBLE_SPELL_EFFECTS,
     EVOLVE_SELF,
+    DEAL_DAMAGE,
+    REVIVE_ALLY,
+    DEVOLVE_SELF,
+    GRANT_IMMUNITY,
+    FULL_HEAL_SELF,
+    BUFF_SHIELD_VALUE
 };
 
 enum class EffectTarget {
@@ -49,6 +60,7 @@ enum class EffectTarget {
     ENEMY_LEVEL_LOWER_THAN,
     ANY_CHOOSE,
     ALL,
+    ENEMY_JUST_PLAYED
 };
 
 enum class EffectCondition {
@@ -56,6 +68,11 @@ enum class EffectCondition {
     COUNT_ALLIES_RACE_GTE,
     COUNT_DECAYED_GTE,
     TOTAL_ATTACK_GTE,
+    ROUNDS_IN_PLAY_GTE,
+    COMBATS_PARTICIPATED_GTE,
+    SPELLS_CAST_GTE,
+    TOTAL_HEAL_DELIVERED_GTE,
+    KILLS_GTE,
     TIMES_ACTIVATED_LT,
 };
 
@@ -74,6 +91,8 @@ struct EffectParams {
     Race race_filter = Race::NONE;
     CardType card_type_filter = CardType::CREATURE;
     Ability ability_to_apply = Ability::NONE;
+
+    DynamicScaling scaling = DynamicScaling::NONE;
 };
 
 struct EffectData {

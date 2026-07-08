@@ -12,6 +12,7 @@ CreatureCard::CreatureCard(const CreatureData *data, int x, int y)
         if (stageData.level == this->stage) {
             this->attack = stageData.attack;
             this->health = stageData.health;
+            this->abilities = stageData.abilities;
             return;
         }
     }
