@@ -1875,6 +1875,715 @@
                     ]
                 }
             ]
+        },
+        {
+            "id": 41,
+            "display_name": "Rainha das Fadas",
+            "image_path": "assets/images/cards/creatures/pixie/rainha_das_fadas_1.png",
+            "race": "PIXIE",
+            "rarity": "LEGENDARY",
+            "description": "A Líder Suprema das Fadas",
+            "mana": 4,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 2,
+                    "health": 2,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "REDUCE_COST",
+                            "target": "HAND_AND_DECK",
+                            "condition": "NONE",
+                            "params": {
+                                "cost_modifier": 1,
+                                "card_type_filter": "SPELL"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 3,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "REDUCE_COST",
+                            "target": "HAND_AND_DECK",
+                            "condition": "NONE",
+                            "params": {
+                                "cost_modifier": 1,
+                                "card_type_filter": "SPELL"
+                            }
+                        },
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "GRANT_ABILITY",
+                            "target": "ALLY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_grant": "SHIELD",
+                                "race_filter": "PIXIE"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 4,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "REDUCE_COST",
+                            "target": "HAND_AND_DECK",
+                            "condition": "NONE",
+                            "params": {
+                                "cost_modifier": 2,
+                                "card_type_filter": "SPELL"
+                            }
+                        },
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "GRANT_ABILITY",
+                            "target": "ALLY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_grant": "SHIELD",
+                                "race_filter": "PIXIE"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 42,
+            "display_name": "Fada Ancestral",
+            "image_path": "assets/images/cards/creatures/pixie/fada_ancestral_1.png",
+            "race": "PIXIE",
+            "rarity": "LEGENDARY",
+            "description": "Uma das fadas mais antigas na Floresta das Fadas",
+            "mana": 6,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 2,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 2,
+                    "health": 7,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "DOUBLE_SPELL_EFFECTS",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {}
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 2,
+                    "health": 9,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "DOUBLE_SPELL_EFFECTS",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {}
+                        },
+                        {
+                            "trigger": "PASSIVE_COND",
+                            "action": "BUFF_SELF_PER_COUNT",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "scaling": "ACTIVE_SPELLS_COUNT"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 43,
+            "display_name": "Dragão Ancestral",
+            "image_path": "assets/images/cards/creatures/dragon/dragao_ancestral_1.png",
+            "race": "DRAGON",
+            "rarity": "LEGENDARY",
+            "description": "'Esse é um ovo de umas das espécies mais antigas dos Dragões' - Ernest",
+            "mana": 2,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 0,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 1,
+                    "health": 6,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE_COND",
+                            "action": "BUFF_SELF_PER_COUNT",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 2,
+                                "health_bonus": 2,
+                                "race_filter": "DRAGON"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 16,
+                    "health": 16,
+                    "abilities": [
+                        "PIERCING"
+                    ],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE_COND",
+                            "action": "BUFF_SELF_PER_COUNT",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 2,
+                                "health_bonus": 2,
+                                "race_filter": "DRAGON",
+                                "ability_to_grant": "PIERCING"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 44,
+            "display_name": "Necrodragon",
+            "image_path": "assets/images/cards/creatures/dragon/necrodragon_1.png",
+            "race": "DRAGON",
+            "rarity": "LEGENDARY",
+            "description": "'Tem algo esquisito nessa especie, parece que sempre estão atrás da sua morte, lutando contra dragões mais fortes ou evitando comer e beber' - Ernest",
+            "mana": 5,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 4,
+                    "health": 3,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ATTACK_BLOCKED",
+                            "action": "APPLY_STATUS_TO_ENEMY",
+                            "target": "ENEMY_CHOOSE",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_apply": "ROT"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 0,
+                    "health": 5,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ATTACK_BLOCKED",
+                            "action": "APPLY_STATUS_TO_ENEMY",
+                            "target": "ENEMY_CHOOSE",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_apply": "ROT"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 10,
+                    "health": 10,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ATTACK_BLOCKED",
+                            "action": "APPLY_STATUS_TO_ENEMY",
+                            "target": "ENEMY_CHOOSE",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_apply": "ROT"
+                            }
+                        },
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "GRANT_ABILITY",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_grant": "PIERCING_AGAINST_STATUS",
+                                "ability_to_apply": "ROT"
+                            }
+                        },
+                        {
+                            "trigger": "ON_DEATH",
+                            "action": "DEVOLVE_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {}
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 45,
+            "display_name": "Muk, o Renegado",
+            "image_path": "assets/images/cards/creatures/human/muk_renegado_1.png",
+            "race": "HUMAN",
+            "rarity": "LEGENDARY",
+            "description": "Expulso da família por seguir a espada.",
+            "mana": 9,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 7,
+                    "health": 7,
+                    "abilities": [
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 8,
+                    "health": 8,
+                    "abilities": [
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": [
+                        {
+                            "trigger": "ON_ATTACK",
+                            "action": "DEAL_DAMAGE",
+                            "target": "DEFENDER",
+                            "condition": "NONE",
+                            "params": {
+                                "scaling": "KILLS_COUNT"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 10,
+                    "health": 8,
+                    "abilities": [
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": [
+                        {
+                            "trigger": "ON_ATTACK",
+                            "action": "DEAL_DAMAGE",
+                            "target": "ENEMY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "scaling": "KILLS_COUNT"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 46,
+            "display_name": "Major Real",
+            "image_path": "assets/images/cards/creatures/human/major_real_1.png",
+            "race": "HUMAN",
+            "rarity": "LEGENDARY",
+            "description": "Fazer de tudo pelo Reino",
+            "mana": 10,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 10,
+                    "health": 10,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "AURA_BUFF_RACE",
+                            "target": "ALLY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "health_bonus": 1,
+                                "race_filter": "HUMAN"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 11,
+                    "health": 11,
+                    "abilities": [
+                        "SHIELD"
+                    ],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "AURA_BUFF_RACE",
+                            "target": "ALLY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 1,
+                                "health_bonus": 1,
+                                "race_filter": "HUMAN"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 12,
+                    "health": 12,
+                    "abilities": [
+                        "PIERCING",
+                        "SHIELD"
+                    ],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "AURA_BUFF_RACE",
+                            "target": "ALLY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 2,
+                                "health_bonus": 2,
+                                "race_filter": "HUMAN"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 47,
+            "display_name": "A Fábrica",
+            "image_path": "assets/images/cards/creatures/automat/a_fabrica_1.png",
+            "race": "AUTOMAT",
+            "rarity": "LEGENDARY",
+            "description": "A grande 'mãe' dos automatos",
+            "mana": 7,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 0,
+                    "health": 10,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_ALLY_DEATH",
+                            "action": "REVIVE_ALLY",
+                            "target": "ALLY_CHOOSE",
+                            "condition": "NONE",
+                            "params": {
+                                "race_filter": "AUTOMAT"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 0,
+                    "health": 10,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "AURA_BUFF_RACE",
+                            "target": "ALLY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 2,
+                                "health_bonus": 2,
+                                "race_filter": "AUTOMAT"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 0,
+                    "health": 10,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "AURA_BUFF_RACE",
+                            "target": "ALLY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 2,
+                                "health_bonus": 2,
+                                "race_filter": "AUTOMAT"
+                            }
+                        },
+                        {
+                            "trigger": "ON_ALLY_DEATH",
+                            "action": "ABSORB_STATS_AND_EFFECTS",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "race_filter": "AUTOMAT"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 48,
+            "display_name": "O campeão",
+            "image_path": "assets/images/cards/creatures/automat/o_campeao_1.png",
+            "race": "AUTOMAT",
+            "rarity": "LEGENDARY",
+            "description": "Um dos melhores boxeadores do Mech-Box",
+            "mana": 8,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 8,
+                    "health": 8,
+                    "abilities": [
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": []
+                },
+                {
+                    "level": 2,
+                    "attack": 10,
+                    "health": 8,
+                    "abilities": [
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": [
+                        {
+                            "trigger": "ON_ATTACK",
+                            "action": "BUFF_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 1
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 12,
+                    "health": 8,
+                    "abilities": [
+                        "QUICK_ATTACK"
+                    ],
+                    "effects": [
+                        {
+                            "trigger": "ON_ATTACK",
+                            "action": "BUFF_SELF",
+                            "target": "SELF",
+                            "condition": "NONE",
+                            "params": {
+                                "attack_bonus": 1
+                            }
+                        },
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "GRANT_IMMUNITY",
+                            "target": "SELF",
+                            "condition": "IN_COMBAT",
+                            "params": {}
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 49,
+            "display_name": "Grande Árvore da Vida",
+            "image_path": "assets/images/cards/creatures/dryad/grande_arvore_vida_1.png",
+            "race": "DRYAD",
+            "rarity": "LEGENDARY",
+            "description": "Existia uma Dríade presa em uma árvore",
+            "mana": 4,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 0,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_TURN_START",
+                            "action": "HEAL_TARGET",
+                            "target": "ALLY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 0,
+                    "health": 6,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_TURN_START",
+                            "action": "HEAL_TARGET",
+                            "target": "ALLY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "amount": 2
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 0,
+                    "health": 8,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "ON_TURN_START",
+                            "action": "HEAL_AND_BUFF_TARGET",
+                            "target": "ALLY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "amount": 2,
+                                "attack_bonus": 1,
+                                "health_bonus": 1,
+                                "ability_to_grant": "SHIELD"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 50,
+            "display_name": "Árvore Morta",
+            "image_path": "assets/images/cards/creatures/dryad/arvore_morta_1.png",
+            "race": "DRYAD",
+            "rarity": "LEGENDARY",
+            "description": "Existia uma Dríade presa em uma árvore",
+            "mana": 5,
+            "stages": [
+                {
+                    "level": 1,
+                    "attack": 0,
+                    "health": 4,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "AURA_APPLY_STATUS",
+                            "target": "ENEMY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_apply": "ROT"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 2,
+                    "attack": 0,
+                    "health": 6,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "AURA_APPLY_STATUS",
+                            "target": "ENEMY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_apply": "ROT"
+                            }
+                        },
+                        {
+                            "trigger": "ON_TURN_END",
+                            "action": "DEAL_DAMAGE",
+                            "target": "ENEMY_ALL_WITH_STATUS",
+                            "condition": "NONE",
+                            "params": {
+                                "amount": 2,
+                                "ability_to_apply": "ROT"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "level": 3,
+                    "attack": 0,
+                    "health": 8,
+                    "abilities": [],
+                    "effects": [
+                        {
+                            "trigger": "PASSIVE",
+                            "action": "AURA_APPLY_STATUS",
+                            "target": "ENEMY_ALL",
+                            "condition": "NONE",
+                            "params": {
+                                "ability_to_apply": "ROT"
+                            }
+                        },
+                        {
+                            "trigger": "ON_TURN_END",
+                            "action": "DEAL_DAMAGE",
+                            "target": "ENEMY_ALL_WITH_STATUS",
+                            "condition": "NONE",
+                            "params": {
+                                "amount": 2,
+                                "ability_to_apply": "ROT"
+                            }
+                        },
+                        {
+                            "trigger": "ON_TURN_END",
+                            "action": "DEAL_DAMAGE_TO_PLAYER",
+                            "target": "ENEMY_PLAYER",
+                            "condition": "NONE",
+                            "params": {
+                                "amount": 1,
+                                "scaling": "DECAYED_COUNT"
+                            }
+                        }
+                    ]
+                }
+            ]
         }
     ],
     "spells": [

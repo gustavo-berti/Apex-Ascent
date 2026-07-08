@@ -19,7 +19,9 @@ enum class EffectTrigger {
     PASSIVE_COND,
     ON_ALLY_DEATH,
     ON_COMBAT_START,
-    ON_KILL_ENEMY
+    ON_KILL_ENEMY,
+    ON_TURN_START,
+    ON_TURN_END,
 };
 
 enum class EffectAction {
@@ -43,7 +45,12 @@ enum class EffectAction {
     DEVOLVE_SELF,
     GRANT_IMMUNITY,
     FULL_HEAL_SELF,
-    BUFF_SHIELD_VALUE
+    BUFF_SHIELD_VALUE,
+    REDUCE_COST,
+    GRANT_ABILITY,
+    AURA_BUFF_RACE,
+    ABSORB_STATS_AND_EFFECTS,
+    HEAL_AND_BUFF_TARGET
 };
 
 enum class EffectTarget {
@@ -60,7 +67,9 @@ enum class EffectTarget {
     ENEMY_LEVEL_LOWER_THAN,
     ANY_CHOOSE,
     ALL,
-    ENEMY_JUST_PLAYED
+    ENEMY_JUST_PLAYED,
+    HAND_AND_DECK,
+    ENEMY_ALL_WITH_STATUS
 };
 
 enum class EffectCondition {
