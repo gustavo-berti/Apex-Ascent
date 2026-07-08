@@ -23,6 +23,12 @@ EffectData CardParser::ParseEffect(const json &effect) {
         data.params.count_threshold = params.value("count_threshold", 0);
         data.params.affect_all_enemies = params.value("affect_all_enemies", false);
         data.params.draw_count = params.value("draw_count", 1);
+        data.params.race_filter = StringToRace(params.value("race_filter", std::string("NONE")));
+        data.params.card_type_filter =
+            StringToCardType(params.value("card_type_filter", std::string("CREATURE")));
+        data.params.ability_to_apply =
+            StringToAbility(params.value("ability_to_apply", std::string("NONE")));
+        data.params.scaling = StringToDynamicScaling(params.value("scaling", std::string("NONE")));
     }
 
     return data;
