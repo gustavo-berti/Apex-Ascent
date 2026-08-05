@@ -53,12 +53,16 @@ bool GameManager::Initialize(const char *title, int x, int y, int width, int hei
             std::cerr << "Falha ao inicializar o SDL_mixer: " << Mix_GetError() << std::endl;
             return false;
         }
-
         
         isRunning = true;
         opponent.SetGuardian(false);
         ChangeMusic("assets/audio/music/menu_theme.mp3");
+        
         LoadSFX("card_place", "assets/audio/sfx/card_place.wav");
+        LoadSFX("card_pull", "assets/audio/sfx/card_pull.wav");
+        LoadSFX("card_death", "assets/audio/sfx/card_death.wav");
+        LoadSFX("card_change", "assets/audio/sfx/card_change.wav");
+        LoadSFX("card_combat", "assets/audio/sfx/card_combat.wav");
 
         SceneMenu *menu = new SceneMenu(*this);
         menu->Initialize(renderer);
