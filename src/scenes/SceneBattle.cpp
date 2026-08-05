@@ -812,6 +812,7 @@ void SceneBattle::DrawCards(Entity *entity, int amount) {
         if (piles.drawPile.empty()) break;
         Card *card = piles.drawPile.back();
         piles.drawPile.pop_back();
+        GameManager::PlaySFX("card_pull");
 
         if (entity->IsHandFull(static_cast<int>(piles.hand.size()))) {
             objects.erase(std::remove(objects.begin(), objects.end(), card), objects.end());

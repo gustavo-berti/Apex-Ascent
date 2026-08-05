@@ -117,8 +117,20 @@ Ability StringToAbility(const std::string &abilityStr) {
         {"SHIELD", Ability::SHIELD},
         {"TERRIFY", Ability::TERRIFY},
         {"QUICK_ATTACK", Ability::QUICK_ATTACK},
-        {"ROT", Ability::ROT}};
+        {"ROT", Ability::ROT},
+        {"PIERCING", Ability::PIERCING}};
 
     auto it = map.find(abilityStr);
     return it != map.end() ? it->second : Ability::NONE;
+}
+
+DynamicScaling StringToDynamicScaling(const std::string &scalingStr) {
+    static const std::unordered_map<std::string, DynamicScaling> map = {
+        {"NONE", DynamicScaling::NONE},
+        {"KILLS_COUNT", DynamicScaling::KILLS_COUNT},
+        {"DECAYED_COUNT", DynamicScaling::DECAYED_COUNT},
+        {"MISSING_HEALTH", DynamicScaling::MISSING_HEALTH}};
+
+    auto it = map.find(scalingStr);
+    return it != map.end() ? it->second : DynamicScaling::NONE;
 }
