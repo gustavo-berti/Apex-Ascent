@@ -133,6 +133,7 @@ bool Board::MoveFromPreparationToBattle(Card *card) {
     playerBattleCards.push_back(card);
     OrganizeZone(playerPreparationCards, playerPreparationRect);
     OrganizeZone(playerBattleCards, playerBattleRect);
+    GameManager::PlaySFX("card_change");
     return true;
 }
 
@@ -151,6 +152,7 @@ bool Board::MoveFromBattleToPreparation(Card *card, std::vector<Card *> &objects
     playerPreparationCards.push_back(card);
     OrganizeZone(playerBattleCards, playerBattleRect);
     OrganizeZone(playerPreparationCards, playerPreparationRect);
+    GameManager::PlaySFX("card_change");
     return true;
 }
 
@@ -214,6 +216,7 @@ CombatResult Board::ResolveCombat(int &opponentCurrentHP, std::vector<Card *> &o
 
             int atk = creature->GetAttack();
             result.damageDealt += atk;
+            GameManager::PlaySFX("card_combat");
 
             std::cout << "[COMBATE] " << attacker->GetName() << " causou " << atk
                       << " de dano direto." << std::endl;

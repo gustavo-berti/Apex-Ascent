@@ -67,6 +67,7 @@ void SceneMenu::HandleInput(SDL_Event &event) {
         battle->Initialize(gameManager.GetRenderer());
         battle->StartBattle(&gameManager.GetPlayer(), &gameManager.GetOpponent(),
                             gameManager.GetRenderer());
+        gameManager.ChangeMusic("assets/audio/music/battle_theme.mp3");
         gameManager.ChangeScene(battle);
     }
     if (IsButtonClicked(buttons[1], event)) {

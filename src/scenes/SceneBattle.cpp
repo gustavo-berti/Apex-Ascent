@@ -729,6 +729,7 @@ void SceneBattle::DrawCards(Entity *entity, int amount) {
 
         Card *card = piles.drawPile.back();
         piles.drawPile.pop_back();
+        GameManager::PlaySFX("card_pull");
 
         if (entity->IsHandFull(static_cast<int>(piles.hand.size()))) {
             // Mao cheia
