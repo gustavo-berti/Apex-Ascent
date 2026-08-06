@@ -62,6 +62,8 @@ class SceneBattle : public GameWorld {
     CardDatabase cardDatabase;
     Card *draggedCard = nullptr;
     BattleOutcome outcome = BattleOutcome::ONGOING;
+    bool hasRendered = false;
+    bool matchStartPending = false;
 
     // ── Fontes ────────────────────────────────────────────────────
     TTF_Font *font = nullptr;      // grande — vitória/derrota
@@ -84,6 +86,7 @@ class SceneBattle : public GameWorld {
     // ── Lógica de turno ───────────────────────────────────────────
     void HandleTurnStart();
     void RunOpponentTurn();
+    void StartMatchFlow();
 
     // ── Mana ──────────────────────────────────────────────────────
     bool SpendMana(Entity *entity, int cost, const std::string &cardName);

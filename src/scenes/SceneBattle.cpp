@@ -74,6 +74,10 @@ void SceneBattle::StartBattle(Player *playerState, Opponent *opp, SDL_Renderer *
     opponent->SetDeck(Race::PIXIE, 1);
     ResetBattleState();
 
+    matchStartPending = true;
+}
+
+void SceneBattle::StartMatchFlow() {
     BuildDrawPile(currentState);
     BuildDrawPile(opponent);
 
@@ -521,11 +525,17 @@ bool SceneBattle::HandleBattleCardClick(const SDL_Event &e) {
 // ═══════════════════════════════════════════════════════════════════
 
 void SceneBattle::Update(float dt) {
+    if (matchStartPending && hasRendered) {
+        matchStartPending = false;
+        StartMatchFlow();
+    }
+
     for (auto obj : objects)
         obj->Update(dt);
 }
 
 void SceneBattle::Render(SDL_Renderer *renderer) {
+    hasRendered = true;
     board.Render(renderer);
     RenderHand(renderer);
     RenderButtons(renderer);
