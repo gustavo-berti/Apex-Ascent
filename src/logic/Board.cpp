@@ -1,6 +1,7 @@
 #include "Board.hpp"
 #include <algorithm>
 #include <iostream>
+#include "../core/GameManager.hpp"
 
 // ═══════════════════════════════════════════════════════════════════
 //  Construtor
@@ -82,6 +83,7 @@ bool Board::AddToPlayerPreparation(Card *card, std::vector<Card *> &objectsPool)
         std::cout << "[BOARD] Campo de preparacao cheio! (max 6)" << std::endl;
         return false;
     }
+    GameManager::PlaySFX("card_place");
     playerPreparationCards.push_back(card);
     OrganizeZone(playerPreparationCards, playerPreparationRect);
     std::cout << "[BOARD] " << card->GetName() << " entrou na preparacao." << std::endl;
@@ -131,6 +133,7 @@ bool Board::MoveFromPreparationToBattle(Card *card) {
     playerBattleCards.push_back(card);
     OrganizeZone(playerPreparationCards, playerPreparationRect);
     OrganizeZone(playerBattleCards, playerBattleRect);
+    GameManager::PlaySFX("card_change");
     return true;
 }
 
@@ -149,6 +152,7 @@ bool Board::MoveFromBattleToPreparation(Card *card, std::vector<Card *> &objects
     playerPreparationCards.push_back(card);
     OrganizeZone(playerBattleCards, playerBattleRect);
     OrganizeZone(playerPreparationCards, playerPreparationRect);
+    GameManager::PlaySFX("card_change");
     return true;
 }
 
@@ -212,6 +216,7 @@ CombatResult Board::ResolveCombat(int &opponentCurrentHP, std::vector<Card *> &o
 
             int atk = creature->GetAttack();
             result.damageDealt += atk;
+            GameManager::PlaySFX("card_combat");
 
             std::cout << "[COMBATE] " << attacker->GetName() << " causou " << atk
                       << " de dano direto." << std::endl;
