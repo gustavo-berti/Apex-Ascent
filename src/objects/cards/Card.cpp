@@ -20,7 +20,7 @@ Color Card::GetRarityColor() const {
     return Color(100, 100, 100, 255);
 }
 
-Card::Card(std::string name, int manaCost, Rarity rarity, std::string imagePath, int x, int y)
+Card::Card(std::string name, int manaCost, Rarity rarity, std::string imagePath, float x, float y)
     : DynamicObject(x, y, 100, 140), name(name), manaCost(manaCost), rarity(rarity),
       imagePath(imagePath) {}
 
@@ -36,7 +36,7 @@ void Card::Initialize() {}
 void Card::Update(float dt) {}
 
 void Card::Render(SDL_Renderer *renderer) {
-    SDL_Rect rect = {x, y, width, height};
+    SDL_Rect rect = {GetX(), GetY(), width, height};
 
     if (texture) {
         SDL_RenderCopy(renderer, texture, nullptr, &rect);
@@ -46,12 +46,11 @@ void Card::Render(SDL_Renderer *renderer) {
     }
 
     Color borderColor = GetRarityColor();
-    SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b,
-                           borderColor.a);
+    SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
 
     const int borderThickness = 4;
     for (int i = 0; i < borderThickness; ++i) {
-        SDL_Rect borderRect = {x + i, y + i, width - (i * 2), height - (i * 2)};
+        SDL_Rect borderRect = {GetX() + i, GetY() + i, width - (i * 2), height - (i * 2)};
         SDL_RenderDrawRect(renderer, &borderRect);
     }
 }
