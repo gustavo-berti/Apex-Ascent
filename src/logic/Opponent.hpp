@@ -2,12 +2,39 @@
 #include "../objects/cards/types/CardTypes.hpp"
 #include "Entity.hpp"
 #include <random>
+#include <vector>
+
+class Card;
+
+// ── Passos pausados (compras iniciais + turno da IA) ───────────────
+// Cada estado representa uma acao visivel; o SceneBattle avanca um estado
+// por vez, com uma pausa entre eles, para o render ficar perceptivel.
+enum class ScriptedState {
+    Idle,
+    DealPlayerHand,
+    DealOpponentHand,
+    AITurnStart,
+    AIEvaluateHand,
+    AISummoning,
+    AIDecideAttack,
+};
 
 // ── Opponent ──────────────────────────────────────────────────────
 struct Opponent : public Entity {
     bool isGuardian = false;
     Race deckType = Race::NONE;
     int deckPart = 0;
+
+    // ── Acoes da IA ───────────────────────────────────────────────────
+    // Decide, em ordem (FIFO), quais criaturas da mao a IA vai invocar neste
+    // turno, respeitando a mana disponivel e o espaco livre no campo.
+    // Pura logica de decisao; quem executa (gastar mana, mover no campo,
+    // pausar entre jogadas) e o SceneBattle.
+    std::vector<Card *> ChooseCreaturesToPlay(const std::vector<Card *> &hand,
+                                              int freeFieldSlots) const;
+
+    // Decide se a IA deve atacar neste turno, comparando o tamanho dos campos.
+    bool ShouldAttack(int enemyFieldCount, int playerFieldCount) const;
 
     static int RandomInt(int minValue, int maxValue) {
         if (minValue > maxValue) std::swap(minValue, maxValue);

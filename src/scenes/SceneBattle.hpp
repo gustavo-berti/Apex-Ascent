@@ -65,6 +65,14 @@ class SceneBattle : public GameWorld {
     bool hasRendered = false;
     bool matchStartPending = false;
 
+    // ── Passos pausados (compras iniciais + turno da IA) ────────────
+    ScriptedState scriptedState = ScriptedState::Idle;
+    float scriptedTimer = 0.f;
+    static constexpr float kScriptedDelay = 0.4f; // pausa entre passos, pro render ficar perceptivel
+    int dealCount = 0;
+    std::vector<Card *> aiCardsToPlay;
+    size_t aiCardsToPlayIndex = 0;
+
     // ── Fontes ────────────────────────────────────────────────────
     TTF_Font *font = nullptr;      // grande — vitória/derrota
     TTF_Font *fontSmall = nullptr; // pequena — HP display
@@ -87,6 +95,14 @@ class SceneBattle : public GameWorld {
     void HandleTurnStart();
     void RunOpponentTurn();
     void StartMatchFlow();
+
+    // ── Passos pausados ───────────────────────────────────────────
+    void AdvanceScriptedState();
+    void RunAITurnStart();
+    void RunAIEvaluateHand();
+    void RunAISummonStep();
+    void RunAIDecideAttack();
+    void ArrangeEnemyCards(std::vector<Card *> &cards, const SDL_Rect &zone) const;
 
     // ── Mana ──────────────────────────────────────────────────────
     bool SpendMana(Entity *entity, int cost, const std::string &cardName);

@@ -84,16 +84,8 @@ void SceneBattle::StartMatchFlow() {
     ShuffleDrawPile(currentState);
     ShuffleDrawPile(opponent);
 
-    DrawCards(currentState, 5);
-    DrawCards(opponent, 5);
-
-    srand(static_cast<unsigned>(SDL_GetTicks()));
-    turnManager.RollForFirstTurn();
-
-    if (turnManager.IsPlayerTurn())
-        HandleTurnStart();
-    else
-        RunOpponentTurn();
+    dealCount = 0;
+    scriptedState = ScriptedState::DealPlayerHand;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -180,83 +172,146 @@ void SceneBattle::HandleTurnStart() {
 void SceneBattle::RunOpponentTurn() {
     std::cout << "\n===================================" << std::endl;
     std::cout << "[OPONENTE] Iniciando turno da IA..." << std::endl;
-    
+    scriptedState = ScriptedState::AITurnStart;
+}
+
+void SceneBattle::RunAITurnStart() {
     bool gainMana = turnManager.ShouldGainManaThisTurn();
     opponent->mana.OnTurnStart(gainMana);
-    std::cout << "[IA] Mana atual: " << opponent->mana.current << "/" << opponent->mana.total << std::endl;
-    
+    std::cout << "[IA] Mana atual: " << opponent->mana.current << "/" << opponent->mana.total
+              << std::endl;
+
     if (turnManager.ShouldDrawThisTurn()) {
         DrawCards(opponent, opponent->GetTurnStartDrawCount());
     }
 
     turnManager.AdvancePhase();
-    
-    auto& hand = opponentPiles.hand;
-    auto& prep = board.enemyPreparationCards;
-    auto arrangeZone = [](std::vector<Card*>& cards, const SDL_Rect& zone) {
-        int n = cards.size();
-        if (n == 0) return;
-        int cw = 100, gap = 15;
-        int totalW = n * cw + (n - 1) * gap;
-        int startX = zone.x + (zone.w - totalW) / 2;
-        int y = zone.y + (zone.h - 140) / 2;
-        for (int i = 0; i < n; ++i) {
-            cards[i]->SetPosition(startX + i * (cw + gap), y);
-        }
-    };
-    
-    std::cout << "[IA] Avaliando " << hand.size() << " carta(s) na mao (Ordem FIFO)..." << std::endl;
-    
-    for (auto it = hand.begin(); it != hand.end(); ) {
-        Card* card = *it;
-        bool isCreature = dynamic_cast<CreatureCard*>(card) != nullptr;
-        
-        if (!isCreature) {
-            ++it;
-            continue;
-        }
-        
-        if (prep.size() >= 6) {
-            std::cout << "[IA] Campo cheio." << std::endl;
-            break; 
-        }
-        
-        if (opponent->mana.CanAfford(card->GetManaCost())) {
-            SpendMana(opponent, card->GetManaCost(), card->GetName());            
-            prep.push_back(card);
-            it = hand.erase(it);
-            arrangeZone(prep, enemyPreparationZone);
-            
-            std::cout << "[IA] >>> INVOCOU: " << card->GetName() << " (Visível no campo!)" << std::endl;
-        } else {
-            ++it; 
-        }
+    scriptedState = ScriptedState::AIEvaluateHand;
+}
+
+void SceneBattle::RunAIEvaluateHand() {
+    auto &hand = opponentPiles.hand;
+    auto &prep = board.enemyPreparationCards;
+    int freeSlots = 6 - static_cast<int>(prep.size());
+
+    std::cout << "[IA] Avaliando " << hand.size() << " carta(s) na mao (Ordem FIFO)..."
+              << std::endl;
+
+    aiCardsToPlay = opponent->ChooseCreaturesToPlay(hand, freeSlots);
+    aiCardsToPlayIndex = 0;
+
+    if (aiCardsToPlay.empty()) {
+        turnManager.AdvancePhase();
+        scriptedState = ScriptedState::AIDecideAttack;
+    } else {
+        scriptedState = ScriptedState::AISummoning;
     }
-    
-    turnManager.AdvancePhase();
-    
+}
+
+void SceneBattle::RunAISummonStep() {
+    Card *card = aiCardsToPlay[aiCardsToPlayIndex++];
+
+    auto &hand = opponentPiles.hand;
+    auto &prep = board.enemyPreparationCards;
+
+    SpendMana(opponent, card->GetManaCost(), card->GetName());
+    prep.push_back(card);
+    hand.erase(std::remove(hand.begin(), hand.end(), card), hand.end());
+    ArrangeEnemyCards(prep, enemyPreparationZone);
+
+    std::cout << "[IA] >>> INVOCOU: " << card->GetName() << " (Visível no campo!)" << std::endl;
+
+    if (aiCardsToPlayIndex >= aiCardsToPlay.size()) {
+        aiCardsToPlay.clear();
+        turnManager.AdvancePhase();
+        scriptedState = ScriptedState::AIDecideAttack;
+    }
+}
+
+void SceneBattle::RunAIDecideAttack() {
     int enemyCount = board.enemyPreparationCards.size() + board.enemyBattleCards.size();
     int playerCount = board.playerPreparationCards.size() + board.playerBattleCards.size();
-    
-    if (enemyCount > playerCount && enemyCount > 0) {
+
+    if (opponent->ShouldAttack(enemyCount, playerCount)) {
         std::cout << "[IA] Vantagem numerica. ATACANDO!" << std::endl;
-        
-        for (Card* card : board.enemyPreparationCards) {
+
+        for (Card *card : board.enemyPreparationCards) {
             board.enemyBattleCards.push_back(card);
         }
         board.enemyPreparationCards.clear();
-    
-        arrangeZone(board.enemyBattleCards, enemyBattleZone);
-        arrangeZone(board.enemyPreparationCards, enemyPreparationZone); 
-        
-        turnManager.AdvanceCombatStep(); 
+
+        ArrangeEnemyCards(board.enemyBattleCards, enemyBattleZone);
+        ArrangeEnemyCards(board.enemyPreparationCards, enemyPreparationZone);
+
+        turnManager.AdvanceCombatStep();
     } else {
-        std::cout << "[IA] Sem vantagem (" << enemyCount << " vs " << playerCount << "). Abortou o ataque." << std::endl;
-        turnManager.AdvancePhase(); 
-        turnManager.AdvancePhase(); 
+        std::cout << "[IA] Sem vantagem (" << enemyCount << " vs " << playerCount
+                  << "). Abortou o ataque." << std::endl;
+        turnManager.AdvancePhase();
+        turnManager.AdvancePhase();
         turnManager.AdvancePhase();
     }
     std::cout << "===================================\n" << std::endl;
+    scriptedState = ScriptedState::Idle;
+}
+
+void SceneBattle::ArrangeEnemyCards(std::vector<Card *> &cards, const SDL_Rect &zone) const {
+    int n = static_cast<int>(cards.size());
+    if (n == 0) return;
+    int cw = 100, gap = 15;
+    int totalW = n * cw + (n - 1) * gap;
+    int startX = zone.x + (zone.w - totalW) / 2;
+    int y = zone.y + (zone.h - 140) / 2;
+    for (int i = 0; i < n; ++i) {
+        cards[i]->SetPosition(startX + i * (cw + gap), y);
+    }
+}
+
+void SceneBattle::AdvanceScriptedState() {
+    switch (scriptedState) {
+    case ScriptedState::DealPlayerHand:
+        DrawCards(currentState, 1);
+        if (++dealCount >= 5) {
+            dealCount = 0;
+            scriptedState = ScriptedState::DealOpponentHand;
+        }
+        break;
+
+    case ScriptedState::DealOpponentHand:
+        DrawCards(opponent, 1);
+        if (++dealCount >= 5) {
+            dealCount = 0;
+            scriptedState = ScriptedState::Idle;
+
+            srand(static_cast<unsigned>(SDL_GetTicks()));
+            turnManager.RollForFirstTurn();
+
+            if (turnManager.IsPlayerTurn())
+                HandleTurnStart();
+            else
+                RunOpponentTurn();
+        }
+        break;
+
+    case ScriptedState::AITurnStart:
+        RunAITurnStart();
+        break;
+
+    case ScriptedState::AIEvaluateHand:
+        RunAIEvaluateHand();
+        break;
+
+    case ScriptedState::AISummoning:
+        RunAISummonStep();
+        break;
+
+    case ScriptedState::AIDecideAttack:
+        RunAIDecideAttack();
+        break;
+
+    case ScriptedState::Idle:
+        break;
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -528,6 +583,14 @@ void SceneBattle::Update(float dt) {
     if (matchStartPending && hasRendered) {
         matchStartPending = false;
         StartMatchFlow();
+    }
+
+    if (scriptedState != ScriptedState::Idle) {
+        scriptedTimer += dt;
+        if (scriptedTimer >= kScriptedDelay) {
+            scriptedTimer = 0.f;
+            AdvanceScriptedState();
+        }
     }
 
     for (auto obj : objects)
