@@ -6,7 +6,7 @@ class DynamicObject : public StaticObject {
     bool isHovered;
 
   public:
-    DynamicObject(int x, int y, int w, int h) : StaticObject(x, y, w, h), isHovered(false) {}
+    DynamicObject(float x, float y, int w, int h) : StaticObject(x, y, w, h), isHovered(false) {}
 
     virtual ~DynamicObject() {}
 
