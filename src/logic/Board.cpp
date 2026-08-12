@@ -31,7 +31,58 @@ void Board::Reset() {
     enemyPreparationCards.clear();
     enemyBattleCards.clear();
     selectedAttackers.clear();
+    defenderAssignments.clear();
     attackDeclared = false;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  Acesso generico as zonas
+// ═══════════════════════════════════════════════════════════════════
+
+std::vector<Card *> &Board::PreparationZone(TurnOwner side) {
+    return side == TurnOwner::PLAYER ? playerPreparationCards : enemyPreparationCards;
+}
+
+std::vector<Card *> &Board::BattleZone(TurnOwner side) {
+    return side == TurnOwner::PLAYER ? playerBattleCards : enemyBattleCards;
+}
+
+const std::vector<Card *> &Board::PreparationZone(TurnOwner side) const {
+    return const_cast<Board *>(this)->PreparationZone(side);
+}
+
+const std::vector<Card *> &Board::BattleZone(TurnOwner side) const {
+    return const_cast<Board *>(this)->BattleZone(side);
+}
+
+const SDL_Rect &Board::PreparationRect(TurnOwner side) const {
+    return side == TurnOwner::PLAYER ? playerPreparationRect : enemyPreparationRect;
+}
+
+const SDL_Rect &Board::BattleRect(TurnOwner side) const {
+    return side == TurnOwner::PLAYER ? playerBattleRect : enemyBattleRect;
+}
+
+bool Board::MoveCard(Card *card, std::vector<Card *> &from, const SDL_Rect &fromRect,
+                     std::vector<Card *> &to, const SDL_Rect &toRect) {
+    if (!card) return false;
+
+    auto it = std::find(from.begin(), from.end(), card);
+    if (it == from.end()) return false;
+    if (static_cast<int>(to.size()) >= kZoneLimit) return false;
+
+    from.erase(it);
+    to.push_back(card);
+    OrganizeZone(from, fromRect);
+    OrganizeZone(to, toRect);
+    return true;
+}
+
+bool Board::RemoveFromZone(Card *card, std::vector<Card *> &zone) {
+    auto it = std::find(zone.begin(), zone.end(), card);
+    if (it == zone.end()) return false;
+    zone.erase(it);
+    return true;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -78,109 +129,106 @@ bool Board::RemoveRightmostCard(std::vector<Card *> &zone, const SDL_Rect &rect,
 //  Adição de cartas
 // ═══════════════════════════════════════════════════════════════════
 
-bool Board::AddToPlayerPreparation(Card *card, std::vector<Card *> &objectsPool) {
-    if (playerPreparationCards.size() >= 6) {
-        std::cout << "[BOARD] Campo de preparacao cheio! (max 6)" << std::endl;
+bool Board::AddToPreparation(Card *card, TurnOwner side) {
+    if (!card) return false;
+
+    std::vector<Card *> &prep = PreparationZone(side);
+    if (static_cast<int>(prep.size()) >= kZoneLimit) {
+        std::cout << "[BOARD] Campo de preparacao cheio! (max " << kZoneLimit << ")" << std::endl;
         return false;
     }
+
+    prep.push_back(card);
+    OrganizeZone(prep, PreparationRect(side));
     GameManager::PlaySFX("card_place");
-    playerPreparationCards.push_back(card);
-    OrganizeZone(playerPreparationCards, playerPreparationRect);
     std::cout << "[BOARD] " << card->GetName() << " entrou na preparacao." << std::endl;
     return true;
 }
 
-bool Board::AddToPlayerBattle(Card *card) {
-    if (playerBattleCards.size() >= 6) {
-        std::cout << "[BOARD] Campo de batalha cheio! (max 6)" << std::endl;
-        return false;
-    }
-    playerBattleCards.push_back(card);
-    OrganizeZone(playerBattleCards, playerBattleRect);
-    return true;
+bool Board::AddToPlayerPreparation(Card *card, std::vector<Card *> &objectsPool) {
+    (void)objectsPool;
+    return AddToPreparation(card, TurnOwner::PLAYER);
 }
 
-bool Board::AddToEnemyPreparation(Card *card) {
-    if (enemyPreparationCards.size() >= 6) return false;
-    enemyPreparationCards.push_back(card);
-    OrganizeZone(enemyPreparationCards, enemyPreparationRect);
-    return true;
-}
+bool Board::AddToEnemyPreparation(Card *card) { return AddToPreparation(card, TurnOwner::OPPONENT); }
 
-bool Board::AddToEnemyBattle(Card *card) {
-    if (enemyBattleCards.size() >= 6) return false;
-    enemyBattleCards.push_back(card);
-    OrganizeZone(enemyBattleCards, enemyBattleRect);
+bool Board::RemoveFromPreparation(Card *card, TurnOwner side) {
+    std::vector<Card *> &prep = PreparationZone(side);
+    if (!RemoveFromZone(card, prep)) return false;
+    OrganizeZone(prep, PreparationRect(side));
     return true;
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  Movimentação interna
+//  Declaração de atacantes
 // ═══════════════════════════════════════════════════════════════════
 
-bool Board::MoveFromPreparationToBattle(Card *card) {
-    if (!card) return false;
+bool Board::DeclareAttacker(Card *card, bool playSound) {
+    if (!card || !dynamic_cast<CreatureCard *>(card)) return false;
+    if (IsCardSelectedAsAttacker(card)) return false;
 
-    auto it = std::find(playerPreparationCards.begin(), playerPreparationCards.end(), card);
-    if (it == playerPreparationCards.end()) return false;
-
-    if (playerBattleCards.size() >= 6) {
-        std::cout << "[BOARD] Campo de batalha cheio, carta nao pode atacar." << std::endl;
+    const TurnOwner side = GetAttackingSide();
+    if (!MoveCard(card, PreparationZone(side), PreparationRect(side), BattleZone(side),
+                  BattleRect(side))) {
+        std::cout << "[BOARD] " << card->GetName() << " nao pode entrar no campo de batalha."
+                  << std::endl;
         return false;
     }
 
-    playerPreparationCards.erase(it);
-    playerBattleCards.push_back(card);
-    OrganizeZone(playerPreparationCards, playerPreparationRect);
-    OrganizeZone(playerBattleCards, playerBattleRect);
-    GameManager::PlaySFX("card_change");
+    selectedAttackers.push_back(card);
+    if (playSound) GameManager::PlaySFX("card_change");
+    std::cout << "[BOARD] " << card->GetName() << " declarada como atacante." << std::endl;
     return true;
 }
 
-bool Board::MoveFromBattleToPreparation(Card *card, std::vector<Card *> &objectsPool) {
-    if (!card) return false;
+bool Board::UndeclareAttacker(Card *card, bool playSound) {
+    auto it = std::find(selectedAttackers.begin(), selectedAttackers.end(), card);
+    if (it == selectedAttackers.end()) return false;
 
-    auto it = std::find(playerBattleCards.begin(), playerBattleCards.end(), card);
-    if (it == playerBattleCards.end()) return false;
-
-    if (playerPreparationCards.size() >= 6) {
-        std::cout << "[BOARD] Preparacao cheia, carta nao pode voltar." << std::endl;
+    const TurnOwner side = GetAttackingSide();
+    if (!MoveCard(card, BattleZone(side), BattleRect(side), PreparationZone(side),
+                  PreparationRect(side))) {
+        std::cout << "[BOARD] Preparacao cheia, " << card->GetName() << " nao pode voltar."
+                  << std::endl;
         return false;
     }
 
-    playerBattleCards.erase(it);
-    playerPreparationCards.push_back(card);
-    OrganizeZone(playerBattleCards, playerBattleRect);
-    OrganizeZone(playerPreparationCards, playerPreparationRect);
-    GameManager::PlaySFX("card_change");
+    selectedAttackers.erase(it);
+    if (playSound) GameManager::PlaySFX("card_change");
+    std::cout << "[BOARD] " << card->GetName() << " removida dos atacantes." << std::endl;
     return true;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  Seleção de atacantes
-// ═══════════════════════════════════════════════════════════════════
+int Board::DeclareAllAttackers() {
+    const std::vector<Card *> candidates = PreparationZone(GetAttackingSide());
+
+    int declared = 0;
+    for (Card *card : candidates)
+        if (DeclareAttacker(card, false)) ++declared;
+
+    if (declared > 0) GameManager::PlaySFX("card_change");
+    return declared;
+}
 
 void Board::ToggleAttackerSelection(Card *card, std::vector<Card *> &objectsPool) {
+    (void)objectsPool;
     if (turnManager.GetCombatStep() != CombatStep::ATTACK_MAGIC) return;
 
-    auto it = std::find(selectedAttackers.begin(), selectedAttackers.end(), card);
-
-    if (it != selectedAttackers.end()) {
-        selectedAttackers.erase(it);
-        MoveFromBattleToPreparation(card, objectsPool);
-        std::cout << "[BOARD] " << card->GetName() << " removido dos atacantes." << std::endl;
-    } else {
-        if (MoveFromPreparationToBattle(card)) {
-            selectedAttackers.push_back(card);
-            std::cout << "[BOARD] " << card->GetName() << " adicionado como atacante." << std::endl;
-        }
-    }
+    if (IsCardSelectedAsAttacker(card))
+        UndeclareAttacker(card, true);
+    else
+        DeclareAttacker(card, true);
 }
 
 void Board::ReturnAllAttackersToPreparation(std::vector<Card *> &objectsPool) {
-    std::vector<Card *> copy = selectedAttackers;
-    for (Card *c : copy)
-        MoveFromBattleToPreparation(c, objectsPool);
+    (void)objectsPool;
+
+    const std::vector<Card *> copy = selectedAttackers;
+    int returned = 0;
+    for (Card *card : copy)
+        if (UndeclareAttacker(card, false)) ++returned;
+
+    if (returned > 0) GameManager::PlaySFX("card_change");
     selectedAttackers.clear();
 }
 
@@ -199,43 +247,169 @@ bool Board::ConfirmAttack() {
     return true;
 }
 
-void Board::ResolveDefenders() {
-    // Oponente sem IA: passa automaticamente sem defender
-    std::cout << "[BOARD] Oponente passou a defesa." << std::endl;
+// ═══════════════════════════════════════════════════════════════════
+//  Declaração de defensores
+// ═══════════════════════════════════════════════════════════════════
+
+Card *Board::GetDefenderOf(const Card *attacker) const {
+    for (const DefenderAssignment &assignment : defenderAssignments)
+        if (assignment.attacker == attacker) return assignment.defender;
+    return nullptr;
 }
 
-CombatResult Board::ResolveCombat(int &opponentCurrentHP, std::vector<Card *> &objectsPool) {
+Card *Board::GetAttackerBlockedBy(const Card *defender) const {
+    for (const DefenderAssignment &assignment : defenderAssignments)
+        if (assignment.defender == defender) return assignment.attacker;
+    return nullptr;
+}
+
+bool Board::IsDefending(const Card *card) const { return GetAttackerBlockedBy(card) != nullptr; }
+
+bool Board::IsAttacking(const Card *card) const {
+    const std::vector<Card *> &attackers = GetAttackers();
+    return std::find(attackers.begin(), attackers.end(), card) != attackers.end();
+}
+
+std::vector<Card *> Board::GetAvailableDefenders() const {
+    std::vector<Card *> available;
+    for (Card *card : PreparationZone(GetDefendingSide())) {
+        if (!dynamic_cast<CreatureCard *>(card)) continue;
+        if (IsDefending(card)) continue;
+        available.push_back(card);
+    }
+    return available;
+}
+
+bool Board::AssignDefender(Card *defender, Card *attacker) {
+    if (turnManager.GetCombatStep() != CombatStep::DECLARE_DEFENDERS) return false;
+    if (!defender || !attacker) return false;
+    if (!dynamic_cast<CreatureCard *>(defender) || !dynamic_cast<CreatureCard *>(attacker))
+        return false;
+
+    if (!IsAttacking(attacker)) {
+        std::cout << "[DEFESA] " << attacker->GetName() << " nao esta atacando." << std::endl;
+        return false;
+    }
+    if (GetDefenderOf(attacker)) {
+        std::cout << "[DEFESA] " << attacker->GetName() << " ja esta sendo defendida." << std::endl;
+        return false;
+    }
+    if (IsDefending(defender)) return false;
+
+    const TurnOwner side = GetDefendingSide();
+    if (!MoveCard(defender, PreparationZone(side), PreparationRect(side), BattleZone(side),
+                  BattleRect(side)))
+        return false;
+
+    defenderAssignments.push_back({defender, attacker});
+    GameManager::PlaySFX("card_change");
+    std::cout << "[DEFESA] " << defender->GetName() << " vai defender contra "
+              << attacker->GetName() << "." << std::endl;
+    return true;
+}
+
+bool Board::UnassignDefender(Card *defender) {
+    auto it = std::find_if(defenderAssignments.begin(), defenderAssignments.end(),
+                           [defender](const DefenderAssignment &a) { return a.defender == defender; });
+    if (it == defenderAssignments.end()) return false;
+
+    const TurnOwner side = GetDefendingSide();
+    MoveCard(defender, BattleZone(side), BattleRect(side), PreparationZone(side),
+             PreparationRect(side));
+    defenderAssignments.erase(it);
+    GameManager::PlaySFX("card_change");
+    std::cout << "[DEFESA] " << defender->GetName() << " nao vai mais defender." << std::endl;
+    return true;
+}
+
+void Board::ClearDefenders() {
+    std::vector<DefenderAssignment> copy = defenderAssignments;
+    for (const DefenderAssignment &assignment : copy)
+        UnassignDefender(assignment.defender);
+    defenderAssignments.clear();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  Resolução do combate
+// ═══════════════════════════════════════════════════════════════════
+
+CombatResult Board::ResolveCombat(int &defendingEntityHP, std::vector<Card *> &objectsPool) {
+    (void)objectsPool;
+
     CombatResult result;
 
-    // ── Sem defensores: dano direto ao HP do oponente ─────────────
+    const TurnOwner attackingSide = GetAttackingSide();
+    const TurnOwner defendingSide = GetDefendingSide();
 
-    if (enemyBattleCards.empty()) {
-        for (Card *attacker : selectedAttackers) {
-            const CreatureCard *creature = dynamic_cast<const CreatureCard *>(attacker);
-            if (!creature) continue;
+    // Copia: as zonas mudam durante a resolucao (mortes e retorno a preparacao)
+    const std::vector<Card *> attackers = GetAttackers();
+    const std::vector<DefenderAssignment> assignments = defenderAssignments;
 
-            int atk = creature->GetAttack();
-            result.damageDealt += atk;
-            GameManager::PlaySFX("card_combat");
+    // ── Troca de dano ─────────────────────────────────────────────
+    for (Card *attackerCard : attackers) {
+        CreatureCard *attacker = dynamic_cast<CreatureCard *>(attackerCard);
+        if (!attacker) continue;
 
-            std::cout << "[COMBATE] " << attacker->GetName() << " causou " << atk
-                      << " de dano direto." << std::endl;
+        CreatureCard *blocker = dynamic_cast<CreatureCard *>(GetDefenderOf(attackerCard));
+
+        if (!blocker) {
+            result.damageDealt += attacker->GetAttack();
+            std::cout << "[COMBATE] " << attacker->GetName() << " passou sem bloqueio e causou "
+                      << attacker->GetAttack() << " de dano direto." << std::endl;
+            continue;
         }
 
-        opponentCurrentHP -= result.damageDealt;
-        if (opponentCurrentHP < 0) opponentCurrentHP = 0;
+        const int attackerDamage = attacker->GetAttack();
+        const int blockerDamage = blocker->GetAttack();
 
-        result.opponentDied = (opponentCurrentHP <= 0);
+        blocker->AddHealth(-attackerDamage);
+        attacker->AddHealth(-blockerDamage);
 
-        std::cout << "[COMBATE] Dano total: " << result.damageDealt
-                  << " | HP restante do oponente: " << opponentCurrentHP << std::endl;
-    } else {
-        // Defensores presentes: placeholder até a implementação completa
-        std::cout << "[COMBATE] Resolucao com defensores (implementar depois)." << std::endl;
+        std::cout << "[COMBATE] " << attacker->GetName() << " (" << attackerDamage << " dmg, vida "
+                  << attacker->GetHealth() << ") x " << blocker->GetName() << " (" << blockerDamage
+                  << " dmg, vida " << blocker->GetHealth() << ")" << std::endl;
     }
 
-    // Atacantes voltam para a preparação após o combate
-    ReturnAllAttackersToPreparation(objectsPool);
+    if (!attackers.empty()) GameManager::PlaySFX("card_combat");
+
+    // ── Mortes ────────────────────────────────────────────────────
+    auto buryIfDead = [&](Card *card, TurnOwner side) {
+        const CreatureCard *creature = dynamic_cast<const CreatureCard *>(card);
+        if (!creature || creature->GetHealth() > 0) return;
+
+        RemoveFromZone(card, BattleZone(side));
+        if (side == TurnOwner::PLAYER)
+            result.deadPlayerCards.push_back(card);
+        else
+            result.deadEnemyCards.push_back(card);
+    };
+
+    for (Card *attacker : attackers)
+        buryIfDead(attacker, attackingSide);
+    for (const DefenderAssignment &assignment : assignments)
+        buryIfDead(assignment.defender, defendingSide);
+
+    // ── Dano na entidade defensora ────────────────────────────────
+    defendingEntityHP -= result.damageDealt;
+    if (defendingEntityHP < 0) defendingEntityHP = 0;
+    result.opponentDied = (defendingEntityHP <= 0);
+
+    std::cout << "[COMBATE] Dano direto total: " << result.damageDealt
+              << " | HP restante do defensor: " << defendingEntityHP << std::endl;
+
+    // ── Sobreviventes voltam para a preparação ────────────────────
+    int survivorsReturned = 0;
+    for (TurnOwner side : {attackingSide, defendingSide}) {
+        const std::vector<Card *> survivors = BattleZone(side);
+        for (Card *card : survivors)
+            if (MoveCard(card, BattleZone(side), BattleRect(side), PreparationZone(side),
+                         PreparationRect(side)))
+                ++survivorsReturned;
+    }
+    if (survivorsReturned > 0) GameManager::PlaySFX("card_change");
+
+    defenderAssignments.clear();
+    selectedAttackers.clear();
     attackDeclared = false;
 
     return result;

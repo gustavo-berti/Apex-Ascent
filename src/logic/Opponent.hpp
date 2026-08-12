@@ -1,5 +1,6 @@
 #pragma once
 #include "../objects/cards/types/CardTypes.hpp"
+#include "CombatTypes.hpp"
 #include "Entity.hpp"
 #include <random>
 #include <vector>
@@ -17,6 +18,11 @@ enum class ScriptedState {
     AIEvaluateHand,
     AISummoning,
     AIDecideAttack,
+    AIConfirmAttack,
+    AIDeclareDefenders,
+    AIDefendStep,
+    AIConfirmDefense,
+    AIEndTurn,
 };
 
 // ── Opponent ──────────────────────────────────────────────────────
@@ -26,15 +32,11 @@ struct Opponent : public Entity {
     int deckPart = 0;
 
     // ── Acoes da IA ───────────────────────────────────────────────────
-    // Decide, em ordem (FIFO), quais criaturas da mao a IA vai invocar neste
-    // turno, respeitando a mana disponivel e o espaco livre no campo.
-    // Pura logica de decisao; quem executa (gastar mana, mover no campo,
-    // pausar entre jogadas) e o SceneBattle.
     std::vector<Card *> ChooseCreaturesToPlay(const std::vector<Card *> &hand,
                                               int freeFieldSlots) const;
-
-    // Decide se a IA deve atacar neste turno, comparando o tamanho dos campos.
     bool ShouldAttack(int enemyFieldCount, int playerFieldCount) const;
+    std::vector<DefenderAssignment> ChooseDefenders(const std::vector<Card *> &attackers,
+                                                    const std::vector<Card *> &availableDefenders) const;
 
     static int RandomInt(int minValue, int maxValue) {
         if (minValue > maxValue) std::swap(minValue, maxValue);

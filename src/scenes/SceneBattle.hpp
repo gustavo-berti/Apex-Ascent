@@ -72,6 +72,11 @@ class SceneBattle : public GameWorld {
     int dealCount = 0;
     std::vector<Card *> aiCardsToPlay;
     size_t aiCardsToPlayIndex = 0;
+    std::vector<DefenderAssignment> aiDefensePlan;
+    size_t aiDefensePlanIndex = 0;
+
+    // ── Declaração de defensores do jogador ───────────────────────
+    Card *pendingDefender = nullptr; // criatura escolhida, esperando o atacante
 
     // ── Fontes ────────────────────────────────────────────────────
     TTF_Font *font = nullptr;      // grande — vitória/derrota
@@ -102,7 +107,11 @@ class SceneBattle : public GameWorld {
     void RunAIEvaluateHand();
     void RunAISummonStep();
     void RunAIDecideAttack();
-    void ArrangeEnemyCards(std::vector<Card *> &cards, const SDL_Rect &zone) const;
+    void RunAIConfirmAttack();
+    void RunAIDeclareDefenders();
+    void RunAIDefendStep();
+    void RunAIConfirmDefense();
+    void RunAIEndTurn();
 
     // ── Mana ──────────────────────────────────────────────────────
     bool SpendMana(Entity *entity, int cost, const std::string &cardName);
@@ -118,6 +127,13 @@ class SceneBattle : public GameWorld {
     void HandleConfirmAttack();
     void CheckBattleOutcome(const CombatResult &result);
 
+    // ── Defesa ────────────────────────────────────────────────────
+    void BeginDefenderDeclaration();
+    void ConfirmDefense();
+    void ClearDefense();
+    void SendDeadCardsToDiscard(const CombatResult &result);
+    bool IsPlayerDeclaringDefenders() const;
+
     // ── Helpers de estado ─────────────────────────────────────────
     bool CanPlayCreature() const;
     bool CanPlaySpell() const;
@@ -130,6 +146,7 @@ class SceneBattle : public GameWorld {
     bool HandleHandCardClick(const SDL_Event &e);
     bool HandleBattleCardClick(const SDL_Event &e);
     bool HandleSummonPendingInput(const SDL_Event &e);
+    bool HandleDefenseInput(const SDL_Event &e);
 
     // ── Deck ──────────────────────────────────────────────────────
     bool SetCurrentPlayerState(Player *p);
@@ -151,6 +168,10 @@ class SceneBattle : public GameWorld {
     void RenderHealthBars(SDL_Renderer *renderer) const;
     void RenderOutcome(SDL_Renderer *renderer) const;
     void RenderSummonPending(SDL_Renderer *renderer) const;
+    void RenderDefensePhase(SDL_Renderer *renderer) const;
+    void RenderCardOutline(SDL_Renderer *renderer, const Card *card, SDL_Color color) const;
+    void RenderLink(SDL_Renderer *renderer, const Card *from, const Card *to,
+                    SDL_Color color) const;
     void RenderButton(SDL_Renderer *renderer, SDL_Rect r, Uint8 red, Uint8 grn, Uint8 blu,
                       bool enabled = true) const;
     void RenderText(SDL_Renderer *renderer, TTF_Font *f, const char *text, SDL_Color color, int x,

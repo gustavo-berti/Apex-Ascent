@@ -107,14 +107,17 @@ void SceneBattle::OnCombatStepChanged(CombatStep step) {
     std::cout << "[COMBATE] " << turnManager.GetCombatStepName() << std::endl;
 
     if (step == CombatStep::DECLARE_DEFENDERS) {
-        board.ResolveDefenders();
-        turnManager.AdvanceCombatStep();
+        BeginDefenderDeclaration();
+        return;
     }
 
     if (step == CombatStep::RESOLUTION) {
+        const bool opponentWasAttacking = !turnManager.IsPlayerTurn();
         int &healthTarget =
             turnManager.IsPlayerTurn() ? opponent->currentHealth : currentState->currentHealth;
         CombatResult result = board.ResolveCombat(healthTarget, cardObjects);
+        pendingDefender = nullptr;
+        SendDeadCardsToDiscard(result);
 
         if (result.damageDealt > 0) {
             std::string targetName = turnManager.IsPlayerTurn() ? "Oponente" : "Jogador";
@@ -124,7 +127,9 @@ void SceneBattle::OnCombatStepChanged(CombatStep step) {
         CheckBattleOutcome(result);
 
         if (!IsBattleOver()) {
-            turnManager.AdvancePhase();
+            turnManager.AdvancePhase(); // COMBATE → Fase Secundaria
+            // A IA nao tem input: precisa de um passo pausado para encerrar o turno
+            if (opponentWasAttacking) scriptedState = ScriptedState::AIEndTurn;
         }
     }
 }
@@ -134,11 +139,7 @@ void SceneBattle::OnCombatStepChanged(CombatStep step) {
 // ═══════════════════════════════════════════════════════════════════
 
 void SceneBattle::CheckBattleOutcome(const CombatResult &result) {
-    if (result.damageDealt > 0) {
-        std::cout << "[BATALHA] Oponente recebeu " << result.damageDealt
-                  << " de dano. HP: " << opponent->currentHealth << "/" << opponent->maxHealth
-                  << std::endl;
-    }
+    (void)result;
 
     if (opponent->IsDefeated()) {
         outcome = BattleOutcome::PLAYER_WIN;
@@ -191,8 +192,7 @@ void SceneBattle::RunAITurnStart() {
 
 void SceneBattle::RunAIEvaluateHand() {
     auto &hand = opponentPiles.hand;
-    auto &prep = board.enemyPreparationCards;
-    int freeSlots = 6 - static_cast<int>(prep.size());
+    const int freeSlots = board.GetFreePreparationSlots(TurnOwner::OPPONENT);
 
     std::cout << "[IA] Avaliando " << hand.size() << " carta(s) na mao (Ordem FIFO)..."
               << std::endl;
@@ -211,15 +211,15 @@ void SceneBattle::RunAIEvaluateHand() {
 void SceneBattle::RunAISummonStep() {
     Card *card = aiCardsToPlay[aiCardsToPlayIndex++];
 
-    auto &hand = opponentPiles.hand;
-    auto &prep = board.enemyPreparationCards;
+    // Mesmo caminho do jogador: o Board valida o limite, organiza e toca o som
+    if (board.AddToEnemyPreparation(card)) {
+        SpendMana(opponent, card->GetManaCost(), card->GetName());
 
-    SpendMana(opponent, card->GetManaCost(), card->GetName());
-    prep.push_back(card);
-    hand.erase(std::remove(hand.begin(), hand.end(), card), hand.end());
-    ArrangeEnemyCards(prep, enemyPreparationZone);
+        auto &hand = opponentPiles.hand;
+        hand.erase(std::remove(hand.begin(), hand.end(), card), hand.end());
 
-    std::cout << "[IA] >>> INVOCOU: " << card->GetName() << " (Visível no campo!)" << std::endl;
+        std::cout << "[IA] >>> INVOCOU: " << card->GetName() << " (Visível no campo!)" << std::endl;
+    }
 
     if (aiCardsToPlayIndex >= aiCardsToPlay.size()) {
         aiCardsToPlay.clear();
@@ -229,42 +229,70 @@ void SceneBattle::RunAISummonStep() {
 }
 
 void SceneBattle::RunAIDecideAttack() {
-    int enemyCount = board.enemyPreparationCards.size() + board.enemyBattleCards.size();
-    int playerCount = board.playerPreparationCards.size() + board.playerBattleCards.size();
+    const int enemyCount = board.GetFieldCount(TurnOwner::OPPONENT);
+    const int playerCount = board.GetFieldCount(TurnOwner::PLAYER);
 
-    if (opponent->ShouldAttack(enemyCount, playerCount)) {
-        std::cout << "[IA] Vantagem numerica. ATACANDO!" << std::endl;
+    // O Board declara os atacantes pelas mesmas regras usadas pelo jogador
+    if (opponent->ShouldAttack(enemyCount, playerCount) && board.DeclareAllAttackers() > 0) {
+        std::cout << "[IA] Vantagem numerica. ATACANDO com " << board.GetAttackers().size()
+                  << " criatura(s)!" << std::endl;
 
-        for (Card *card : board.enemyPreparationCards) {
-            board.enemyBattleCards.push_back(card);
-        }
-        board.enemyPreparationCards.clear();
-
-        ArrangeEnemyCards(board.enemyBattleCards, enemyBattleZone);
-        ArrangeEnemyCards(board.enemyPreparationCards, enemyPreparationZone);
-
-        turnManager.AdvanceCombatStep();
+        scriptedState = ScriptedState::AIConfirmAttack;
+        turnManager.AdvanceCombatStep(); // Declarar Atacantes → Magias do Atacante
     } else {
         std::cout << "[IA] Sem vantagem (" << enemyCount << " vs " << playerCount
                   << "). Abortou o ataque." << std::endl;
-        turnManager.AdvancePhase();
+        std::cout << "===================================\n" << std::endl;
+        scriptedState = ScriptedState::Idle;
         turnManager.AdvancePhase();
         turnManager.AdvancePhase();
     }
-    std::cout << "===================================\n" << std::endl;
-    scriptedState = ScriptedState::Idle;
 }
 
-void SceneBattle::ArrangeEnemyCards(std::vector<Card *> &cards, const SDL_Rect &zone) const {
-    int n = static_cast<int>(cards.size());
-    if (n == 0) return;
-    int cw = 100, gap = 15;
-    int totalW = n * cw + (n - 1) * gap;
-    int startX = zone.x + (zone.w - totalW) / 2;
-    int y = zone.y + (zone.h - 140) / 2;
-    for (int i = 0; i < n; ++i) {
-        cards[i]->SetPosition(startX + i * (cw + gap), y);
+void SceneBattle::RunAIConfirmAttack() {
+    std::cout << "[IA] Confirmou o ataque com " << board.GetAttackers().size() << " criatura(s)."
+              << std::endl;
+    scriptedState = ScriptedState::Idle;
+    turnManager.AdvanceCombatStep(); // Magias do Atacante → Declarar Defensores (jogador defende)
+}
+
+// ── Defesa da IA (quando o jogador ataca) ─────────────────────────
+
+void SceneBattle::RunAIDeclareDefenders() {
+    aiDefensePlan = opponent->ChooseDefenders(board.GetAttackers(), board.GetAvailableDefenders());
+    aiDefensePlanIndex = 0;
+
+    if (aiDefensePlan.empty()) {
+        std::cout << "[IA] Nenhum bloqueio compensa. Passou a defesa." << std::endl;
+        scriptedState = ScriptedState::Idle;
+        turnManager.AdvanceCombatStep(); // → Resolucao
+        return;
     }
+
+    std::cout << "[IA] Vai defender com " << aiDefensePlan.size() << " criatura(s)." << std::endl;
+    scriptedState = ScriptedState::AIDefendStep;
+}
+
+void SceneBattle::RunAIDefendStep() {
+    const DefenderAssignment &assignment = aiDefensePlan[aiDefensePlanIndex++];
+    board.AssignDefender(assignment.defender, assignment.attacker);
+
+    if (aiDefensePlanIndex >= aiDefensePlan.size()) {
+        aiDefensePlan.clear();
+        aiDefensePlanIndex = 0;
+        scriptedState = ScriptedState::AIConfirmDefense;
+    }
+}
+
+void SceneBattle::RunAIConfirmDefense() {
+    scriptedState = ScriptedState::Idle;
+    turnManager.AdvanceCombatStep(); // Declarar Defensores → Resolucao
+}
+
+void SceneBattle::RunAIEndTurn() {
+    std::cout << "===================================\n" << std::endl;
+    scriptedState = ScriptedState::Idle;
+    turnManager.AdvancePhase(); // Fase Secundaria → turno do jogador
 }
 
 void SceneBattle::AdvanceScriptedState() {
@@ -309,6 +337,26 @@ void SceneBattle::AdvanceScriptedState() {
         RunAIDecideAttack();
         break;
 
+    case ScriptedState::AIConfirmAttack:
+        RunAIConfirmAttack();
+        break;
+
+    case ScriptedState::AIDeclareDefenders:
+        RunAIDeclareDefenders();
+        break;
+
+    case ScriptedState::AIDefendStep:
+        RunAIDefendStep();
+        break;
+
+    case ScriptedState::AIConfirmDefense:
+        RunAIConfirmDefense();
+        break;
+
+    case ScriptedState::AIEndTurn:
+        RunAIEndTurn();
+        break;
+
     case ScriptedState::Idle:
         break;
     }
@@ -335,7 +383,7 @@ bool SceneBattle::SpendMana(Entity *entity, int cost, const std::string &cardNam
 // ═══════════════════════════════════════════════════════════════════
 
 void SceneBattle::TrySummonCard(Card *card, std::vector<Card *>::reverse_iterator handIt) {
-    if (board.playerPreparationCards.size() < 6) {
+    if (!board.IsPreparationFull(TurnOwner::PLAYER)) {
         if (!SpendMana(currentState, card->GetManaCost(), card->GetName())) return;
 
         if (board.AddToPlayerPreparation(card, cardObjects)) {
@@ -370,11 +418,10 @@ void SceneBattle::ConfirmSummon() {
         return;
     }
 
-    auto &prep = board.playerPreparationCards;
-    auto it = std::find(prep.begin(), prep.end(), toSacrifice);
-    if (it != prep.end()) {
-        prep.erase(it);
+    if (board.RemoveFromPreparation(toSacrifice, TurnOwner::PLAYER)) {
+        toSacrifice->SetPosition(-200, -200);
         playerPiles.discardPile.push_back(toSacrifice);
+        GameManager::PlaySFX("card_death");
         std::cout << "[SACRIFICIO] " << toSacrifice->GetName() << " foi enviada ao cemiterio."
                   << std::endl;
     }
@@ -445,6 +492,78 @@ void SceneBattle::HandleConfirmAttack() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+//  Defesa
+// ═══════════════════════════════════════════════════════════════════
+
+bool SceneBattle::IsPlayerDeclaringDefenders() const {
+    return !turnManager.IsPlayerTurn() && turnManager.GetPhase() == BattlePhase::COMBAT &&
+           turnManager.GetCombatStep() == CombatStep::DECLARE_DEFENDERS;
+}
+
+void SceneBattle::BeginDefenderDeclaration() {
+    pendingDefender = nullptr;
+    board.ClearDefenders();
+
+    if (board.GetAttackers().empty()) {
+        std::cout << "[DEFESA] Nenhum atacante declarado." << std::endl;
+        turnManager.AdvanceCombatStep();
+        return;
+    }
+
+    if (board.GetAvailableDefenders().empty()) {
+        std::cout << "[DEFESA] Lado defensor sem criaturas para defender." << std::endl;
+        if (turnManager.IsPlayerTurn())
+            scriptedState = ScriptedState::AIConfirmDefense; // pausa pro render antes do dano
+        else
+            turnManager.AdvanceCombatStep();
+        return;
+    }
+
+    if (turnManager.IsPlayerTurn()) {
+        // O jogador atacou: a IA escolhe os defensores dela
+        scriptedState = ScriptedState::AIDeclareDefenders;
+        return;
+    }
+
+    // A IA atacou: o jogador escolhe quem defende e contra quem
+    std::cout << "[DEFESA] Clique numa criatura da preparacao e depois no atacante que ela "
+                 "vai defender. Confirme quando terminar."
+              << std::endl;
+}
+
+void SceneBattle::ConfirmDefense() {
+    pendingDefender = nullptr;
+    std::cout << "[DEFESA] Defesa confirmada com " << board.GetDefenderAssignments().size()
+              << " bloqueio(s)." << std::endl;
+    turnManager.AdvanceCombatStep(); // → Resolucao
+}
+
+void SceneBattle::ClearDefense() {
+    pendingDefender = nullptr;
+    board.ClearDefenders();
+    std::cout << "[DEFESA] Bloqueios limpos." << std::endl;
+}
+
+void SceneBattle::SendDeadCardsToDiscard(const CombatResult &result) {
+    auto bury = [](std::vector<Card *> &discardPile, const std::vector<Card *> &deadCards,
+                   const char *ownerName) {
+        for (Card *card : deadCards) {
+            if (!card) continue;
+            card->SetPosition(-200, -200);
+            discardPile.push_back(card);
+            std::cout << "[COMBATE] " << card->GetName() << " (" << ownerName
+                      << ") foi destruida e enviada ao cemiterio." << std::endl;
+        }
+    };
+
+    bury(playerPiles.discardPile, result.deadPlayerCards, "jogador");
+    bury(opponentPiles.discardPile, result.deadEnemyCards, "oponente");
+
+    if (!result.deadPlayerCards.empty() || !result.deadEnemyCards.empty())
+        GameManager::PlaySFX("card_death");
+}
+
+// ═══════════════════════════════════════════════════════════════════
 //  HandleInput
 // ═══════════════════════════════════════════════════════════════════
 
@@ -456,12 +575,76 @@ void SceneBattle::HandleInput(SDL_Event &event) {
         return;
     }
 
+    if (IsPlayerDeclaringDefenders()) {
+        HandleDefenseInput(event);
+        return;
+    }
+
     if (HandleCancelClick(event)) return;
     if (HandleAttackClick(event)) return;
     if (HandleNextPhaseClick(event)) return;
     if (!turnManager.IsPlayerTurn()) return;
     if (HandleBattleCardClick(event)) return;
     HandleHandCardClick(event);
+}
+
+// ── Input da declaração de defensores ─────────────────────────────
+
+bool SceneBattle::HandleDefenseInput(const SDL_Event &e) {
+    if (e.type != SDL_MOUSEBUTTONDOWN || e.button.button != SDL_BUTTON_LEFT) return false;
+
+    auto hits = [&](const Card *card) {
+        SDL_Rect r = {card->GetX(), card->GetY(), card->GetWidth(), card->GetHeight()};
+        return GameManager::IsPointInsideRect(e.button.x, e.button.y, r);
+    };
+
+    if (GameManager::IsPointInsideRect(e.button.x, e.button.y, btnNextPhase)) {
+        ConfirmDefense();
+        return true;
+    }
+
+    if (GameManager::IsPointInsideRect(e.button.x, e.button.y, btnCancel)) {
+        ClearDefense();
+        return true;
+    }
+
+    // Criatura da preparacao: escolhe (ou desmarca) quem vai defender
+    for (Card *card : board.GetPlayerPreparationCards()) {
+        if (!card || !hits(card)) continue;
+        if (!dynamic_cast<CreatureCard *>(card)) return true;
+
+        if (pendingDefender == card) {
+            pendingDefender = nullptr;
+            std::cout << "[DEFESA] Selecao removida." << std::endl;
+        } else {
+            pendingDefender = card;
+            std::cout << "[DEFESA] " << card->GetName()
+                      << " selecionada. Clique no atacante que ela vai defender." << std::endl;
+        }
+        return true;
+    }
+
+    // Defensor ja declarado: clicar nele desfaz o bloqueio
+    for (Card *card : board.GetPlayerBattleCards()) {
+        if (!card || !hits(card)) continue;
+        if (board.UnassignDefender(card) && pendingDefender == card) pendingDefender = nullptr;
+        return true;
+    }
+
+    // Atacante inimigo: recebe o defensor selecionado (ou libera o bloqueio dele)
+    for (Card *card : board.GetEnemyBattleCards()) {
+        if (!card || !hits(card)) continue;
+
+        if (pendingDefender) {
+            if (board.AssignDefender(pendingDefender, card)) pendingDefender = nullptr;
+            return true;
+        }
+
+        if (Card *blocker = board.GetDefenderOf(card)) board.UnassignDefender(blocker);
+        return true;
+    }
+
+    return false;
 }
 
 // ── Input do modo sacrifício ──────────────────────────────────────
@@ -479,7 +662,7 @@ bool SceneBattle::HandleSummonPendingInput(const SDL_Event &e) {
         return true;
     }
 
-    for (auto *card : board.playerPreparationCards) {
+    for (auto *card : board.GetPlayerPreparationCards()) {
         if (!card) continue;
         SDL_Rect r = {card->GetX(), card->GetY(), card->GetWidth(), card->GetHeight()};
         if (!GameManager::IsPointInsideRect(e.button.x, e.button.y, r)) continue;
@@ -600,6 +783,7 @@ void SceneBattle::Update(float dt) {
 void SceneBattle::Render(SDL_Renderer *renderer) {
     hasRendered = true;
     board.Render(renderer);
+    RenderDefensePhase(renderer);
     RenderHand(renderer);
     RenderButtons(renderer);
     RenderMana(renderer);
@@ -641,7 +825,7 @@ void SceneBattle::RenderSummonPending(SDL_Renderer *renderer) const {
         }
     }
 
-    for (const Card *card : board.playerPreparationCards) {
+    for (const Card *card : board.GetPlayerPreparationCards()) {
         if (!card) continue;
 
         bool isSelected = (summonPending.cardToSacrifice == card);
@@ -678,18 +862,19 @@ void SceneBattle::RenderButtons(SDL_Renderer *renderer) const {
 
     bool isPlayer = turnManager.IsPlayerTurn();
     auto step = turnManager.GetCombatStep();
+    const bool defending = IsPlayerDeclaringDefenders();
 
     const SDL_Color borderColor = {255, 255, 255, 255};
     const SDL_Color textColor = {255, 255, 255, 255};
 
-    const std::string nextPhaseLabel =
-        (turnManager.GetPhase() == BattlePhase::COMBAT && step == CombatStep::ATTACK_MAGIC)
-            ? "Confirmar"
-            : "Próximo";
+    const bool confirmLabel =
+        defending || (turnManager.GetPhase() == BattlePhase::COMBAT && isPlayer &&
+                      step == CombatStep::ATTACK_MAGIC);
+    const std::string nextPhaseLabel = confirmLabel ? "Confirmar" : "Próximo";
 
-    ui::UIRenderUtils::RenderButton(renderer, btnNextPhase, nextPhaseLabel, fontSmall, isPlayer,
-                                    {220, 160, 0, 255}, {250, 200, 40, 255}, borderColor,
-                                    textColor);
+    ui::UIRenderUtils::RenderButton(renderer, btnNextPhase, nextPhaseLabel, fontSmall,
+                                    isPlayer || defending, {220, 160, 0, 255}, {250, 200, 40, 255},
+                                    borderColor, textColor);
 
     if (board.ShouldShowAttackButton())
         ui::UIRenderUtils::RenderButton(renderer, btnAttack, "Atacar", fontSmall,
@@ -700,6 +885,71 @@ void SceneBattle::RenderButtons(SDL_Renderer *renderer) const {
         ui::UIRenderUtils::RenderButton(renderer, btnCancel, "Cancelar", fontSmall, true,
                                         {80, 80, 200, 255}, {120, 120, 240, 255}, borderColor,
                                         textColor);
+
+    if (defending)
+        ui::UIRenderUtils::RenderButton(renderer, btnCancel, "Limpar", fontSmall, true,
+                                        {80, 80, 200, 255}, {120, 120, 240, 255}, borderColor,
+                                        textColor);
+}
+
+// ── Destaque dos bloqueios ────────────────────────────────────────
+
+void SceneBattle::RenderCardOutline(SDL_Renderer *renderer, const Card *card,
+                                    SDL_Color color) const {
+    if (!card) return;
+
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    for (int i = 0; i < 3; ++i) {
+        SDL_Rect outline = {card->GetX() - 3 + i, card->GetY() - 3 + i, card->GetWidth() + 6 - i * 2,
+                            card->GetHeight() + 6 - i * 2};
+        SDL_RenderDrawRect(renderer, &outline);
+    }
+}
+
+void SceneBattle::RenderLink(SDL_Renderer *renderer, const Card *from, const Card *to,
+                             SDL_Color color) const {
+    if (!from || !to) return;
+
+    const int x1 = from->GetX() + from->GetWidth() / 2;
+    const int y1 = from->GetY() + from->GetHeight() / 2;
+    const int x2 = to->GetX() + to->GetWidth() / 2;
+    const int y2 = to->GetY() + to->GetHeight() / 2;
+
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    for (int offset = -1; offset <= 1; ++offset)
+        SDL_RenderDrawLine(renderer, x1 + offset, y1, x2 + offset, y2);
+}
+
+void SceneBattle::RenderDefensePhase(SDL_Renderer *renderer) const {
+    if (turnManager.GetPhase() != BattlePhase::COMBAT) return;
+    if (turnManager.GetCombatStep() != CombatStep::DECLARE_DEFENDERS) return;
+
+    const SDL_Color blocked = {80, 220, 120, 255};
+    const SDL_Color unblocked = {235, 70, 70, 255};
+    const SDL_Color selected = {255, 220, 80, 255};
+
+    // Atacantes: verde = bloqueado, vermelho = vai passar direto pra vida
+    for (const Card *attacker : board.GetAttackers())
+        RenderCardOutline(renderer, attacker,
+                          board.GetDefenderOf(attacker) ? blocked : unblocked);
+
+    for (const DefenderAssignment &assignment : board.GetDefenderAssignments()) {
+        RenderCardOutline(renderer, assignment.defender, blocked);
+        RenderLink(renderer, assignment.defender, assignment.attacker, blocked);
+    }
+
+    if (pendingDefender) RenderCardOutline(renderer, pendingDefender, selected);
+
+    if (!fontSmall || !IsPlayerDeclaringDefenders()) return;
+
+    const std::string hint =
+        pendingDefender ? "Clique no atacante que " + pendingDefender->GetName() + " vai defender"
+                        : "Escolha uma criatura para defender e depois o atacante";
+
+    int textW = 0;
+    int textH = 0;
+    TTF_SizeUTF8(fontSmall, hint.c_str(), &textW, &textH);
+    ui::UIRenderUtils::RenderText(renderer, hint, (1600 - textW) / 2, 370, selected, fontSmall);
 }
 
 void SceneBattle::RenderHealthBars(SDL_Renderer *renderer) const {
@@ -833,6 +1083,11 @@ void SceneBattle::ResetBattleState() {
     opponentPiles.hand.clear();
     opponentPiles.discardPile.clear();
     cardObjects.clear();
+    aiCardsToPlay.clear();
+    aiCardsToPlayIndex = 0;
+    aiDefensePlan.clear();
+    aiDefensePlanIndex = 0;
+    pendingDefender = nullptr;
     board.Reset();
     summonPending.Clear();
     if (currentState) currentState->Reset();
