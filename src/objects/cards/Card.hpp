@@ -28,6 +28,10 @@ class Card : public DynamicObject {
 
     Color GetRarityColor() const;
 
+  protected:
+    void RenderBadge(SDL_Renderer *renderer, int value, int badgeX, int badgeY,
+                     Color bgColor) const;
+
   public:
     Card(std::string name, int manaCost, Rarity rarity, std::string imagePath, float x, float y);
     virtual ~Card();

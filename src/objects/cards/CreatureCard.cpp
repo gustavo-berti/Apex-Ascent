@@ -33,7 +33,14 @@ void CreatureCard::Update(float dt) {}
 void CreatureCard::Render(SDL_Renderer *renderer) {
     SDL_SetRenderDrawColor(renderer, 50, 100, 200, 255);
     Card::Render(renderer);
-    // Additional rendering for attack, health, and effect description can be added here
+
+    const int badgeSize = 22;
+    const int margin = 4;
+
+    RenderBadge(renderer, attack, GetX() + margin, GetY() + GetHeight() - badgeSize - margin,
+                Color(180, 40, 40, 255));
+    RenderBadge(renderer, health, GetX() + GetWidth() - badgeSize - margin,
+                GetY() + GetHeight() - badgeSize - margin, Color(40, 150, 70, 255));
 }
 
 void CreatureCard::GainXP() {
