@@ -1,4 +1,4 @@
-CXX = g++
+CXX = g++-14
 CXXFLAGS = -std=c++23 -Wall -ggdb -MMD -MP \
            -I./libs/my-lib/include -I./libs -I./src \
            `pkg-config --cflags sdl2 SDL2_image SDL2_ttf SDL2_mixer` \

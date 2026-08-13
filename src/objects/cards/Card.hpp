@@ -28,8 +28,12 @@ class Card : public DynamicObject {
 
     Color GetRarityColor() const;
 
+  protected:
+    void RenderBadge(SDL_Renderer *renderer, int value, int badgeX, int badgeY,
+                     Color bgColor) const;
+
   public:
-    Card(std::string name, int manaCost, Rarity rarity, std::string imagePath, int x, int y);
+    Card(std::string name, int manaCost, Rarity rarity, std::string imagePath, float x, float y);
     virtual ~Card();
 
     virtual void Initialize() override;
@@ -38,10 +42,7 @@ class Card : public DynamicObject {
     virtual void ActivateEffect() {}
 
     void LoadTexture(SDL_Renderer *renderer);
-    void SetPosition(int newX, int newY) {
-        x = newX;
-        y = newY;
-    }
+    void SetPosition(float newX, float newY) { pos.set(newX, newY); }
 
     const std::string &GetName() const { return name; }
     int GetManaCost() const { return manaCost; }
