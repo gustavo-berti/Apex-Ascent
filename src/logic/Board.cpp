@@ -93,13 +93,12 @@ void Board::OrganizeZone(std::vector<Card *> &zone, const SDL_Rect &rect) {
     int n = static_cast<int>(zone.size());
     if (n == 0) return;
 
-    const int cw = 100, ch = 140, gap = 15;
-    int totalW = n * cw + (n - 1) * gap;
+    int totalW = n * kCardWidth + (n - 1) * kCardGap;
     int startX = rect.x + (rect.w - totalW) / 2;
-    int y = rect.y + (rect.h - ch) / 2;
+    int y = rect.y + (rect.h - kCardHeight) / 2;
 
     for (int i = 0; i < n; ++i)
-        zone[i]->SetPosition(startX + i * (cw + gap), y);
+        zone[i]->SetPosition(startX + i * (kCardWidth + kCardGap), y);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -166,6 +165,7 @@ bool Board::RemoveFromPreparation(Card *card, TurnOwner side) {
 bool Board::DeclareAttacker(Card *card, bool playSound) {
     if (!card || !dynamic_cast<CreatureCard *>(card)) return false;
     if (IsCardSelectedAsAttacker(card)) return false;
+    if (!turnManager.CanAttackThisTurn()) return false;
 
     const TurnOwner side = GetAttackingSide();
     if (!MoveCard(card, PreparationZone(side), PreparationRect(side), BattleZone(side),
@@ -200,6 +200,13 @@ bool Board::UndeclareAttacker(Card *card, bool playSound) {
 }
 
 int Board::DeclareAllAttackers() {
+    // Mesma regra do jogador: ninguem ataca no proprio primeiro turno.
+    if (!turnManager.CanAttackThisTurn()) {
+        std::cout << "[BOARD] Primeiro turno de " << turnManager.GetOwnerName()
+                  << ": ataque nao permitido." << std::endl;
+        return 0;
+    }
+
     const std::vector<Card *> candidates = PreparationZone(GetAttackingSide());
 
     int declared = 0;
@@ -447,10 +454,6 @@ void Board::RenderZoneBorders(SDL_Renderer *renderer) const {
     SDL_RenderDrawRect(renderer, &enemyBattleRect);
     SDL_RenderDrawRect(renderer, &playerBattleRect);
     SDL_RenderDrawRect(renderer, &playerPreparationRect);
-
-    SDL_SetRenderDrawColor(renderer, 180, 180, 180, 255);
-    SDL_RenderDrawLine(renderer, playerBattleRect.x, 387, playerBattleRect.x + playerBattleRect.w,
-                       387);
 }
 
 void Board::Render(SDL_Renderer *renderer) const {

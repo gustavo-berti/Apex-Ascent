@@ -31,6 +31,13 @@ SceneBattle::~SceneBattle() {
 
 void SceneBattle::Initialize(SDL_Renderer *renderer) {
     std::cout << "Inicializando SceneBattle..." << std::endl;
+    SDL_Surface *surface = IMG_Load("assets/images/arena.png");
+    if (!surface) {
+        std::cerr << "Erro ao carregar fundo: " << IMG_GetError() << std::endl;
+    } else {
+        background = SDL_CreateTextureFromSurface(renderer, surface);
+        SDL_FreeSurface(surface);
+    }
 
     if (!cardDatabase.LoadFromJson("assets/data/cards.json"))
         std::cerr << "Falha ao carregar cards.json" << std::endl;
@@ -38,14 +45,32 @@ void SceneBattle::Initialize(SDL_Renderer *renderer) {
     font = ui::UIRenderUtils::LoadFont("./assets/fonts/arial.ttf", 72);
     fontSmall = ui::UIRenderUtils::LoadFont("./assets/fonts/arial.ttf", 28);
 
-    const int boardWidth = 1000;
-    const int boardX = (1600 - boardWidth) / 2;
+    // O campo tem exatamente a largura das 6 cartas que cabem nele (Board::kZoneWidth).
+    // As quatro zonas usam o mesmo kZoneGap entre si; na horizontal o bloco fica
+    // centralizado na tela e na vertical ele desce ate encostar na mao (kHandGap),
+    // que e o limite inferior real do tabuleiro.
+    constexpr int kScreenW = 1600;
+    constexpr int kScreenH = 900;
+    constexpr int kZoneGap = 8;
+    constexpr int kHandGap = 8; // respiro entre a preparacao do jogador e a mao
+    // A mao usa a mesma altura das zonas (carta + respiro), o mais justo possivel,
+    // para o tabuleiro poder descer o maximo.
+    constexpr int kHandH = Board::kZoneHeight;
 
-    enemyPreparationZone = {boardX, 25, boardWidth, 150};
-    enemyBattleZone = {boardX, 200, boardWidth, 150};
-    playerBattleZone = {boardX, 413, boardWidth, 150};
-    playerPreparationZone = {boardX, 600, boardWidth, 150};
-    playerHandZone = {0, 740, 1600, 160};
+    constexpr int boardWidth = Board::kZoneWidth;
+    constexpr int zoneH = Board::kZoneHeight;
+    constexpr int boardX = (kScreenW - boardWidth) / 2;
+
+    constexpr int handY = kScreenH - kHandH;
+    constexpr int stackH = 4 * zoneH + 3 * kZoneGap;
+    constexpr int topY = handY - kHandGap - stackH;
+    static_assert(topY >= 0, "o tabuleiro nao cabe acima da mao");
+
+    enemyPreparationZone = {boardX, topY, boardWidth, zoneH};
+    enemyBattleZone = {boardX, enemyPreparationZone.y + zoneH + kZoneGap, boardWidth, zoneH};
+    playerBattleZone = {boardX, enemyBattleZone.y + zoneH + kZoneGap, boardWidth, zoneH};
+    playerPreparationZone = {boardX, playerBattleZone.y + zoneH + kZoneGap, boardWidth, zoneH};
+    playerHandZone = {0, handY, kScreenW, kHandH};
 
     btnCancel = {1420, 300, 150, 50};
     btnNextPhase = {1420, 360, 150, 50};
@@ -232,8 +257,14 @@ void SceneBattle::RunAIDecideAttack() {
     const int enemyCount = board.GetFieldCount(TurnOwner::OPPONENT);
     const int playerCount = board.GetFieldCount(TurnOwner::PLAYER);
 
+    // Mesma regra do jogador: ninguem ataca no proprio primeiro turno
+    const bool canAttack = turnManager.CanAttackThisTurn();
+    if (!canAttack)
+        std::cout << "[IA] Primeiro turno: nao pode atacar." << std::endl;
+
     // O Board declara os atacantes pelas mesmas regras usadas pelo jogador
-    if (opponent->ShouldAttack(enemyCount, playerCount) && board.DeclareAllAttackers() > 0) {
+    if (canAttack && opponent->ShouldAttack(enemyCount, playerCount) &&
+        board.DeclareAllAttackers() > 0) {
         std::cout << "[IA] Vantagem numerica. ATACANDO com " << board.GetAttackers().size()
                   << " criatura(s)!" << std::endl;
 
@@ -442,12 +473,12 @@ void SceneBattle::CancelSummon() {
 }
 
 void SceneBattle::RearrangeHand() {
-    int n = playerPiles.hand.size(), cw = 100, gap = 15;
-    int totalW = n * cw + (n - 1) * gap;
-    int startX = playerHandZone.x + (playerHandZone.w - totalW) / 2;
-    int y = playerHandZone.y + (playerHandZone.h - 140) / 2;
+    const int n = static_cast<int>(playerPiles.hand.size());
+    const int totalW = n * Board::kCardWidth + (n - 1) * Board::kCardGap;
+    const int startX = playerHandZone.x + (playerHandZone.w - totalW) / 2;
+    const int y = playerHandZone.y + (playerHandZone.h - Board::kCardHeight) / 2;
     for (int i = 0; i < n; ++i)
-        playerPiles.hand[i]->SetPosition(startX + i * (cw + gap), y);
+        playerPiles.hand[i]->SetPosition(startX + i * (Board::kCardWidth + Board::kCardGap), y);
 }
 
 // ═══════════════════════════════════════════════════════════════════

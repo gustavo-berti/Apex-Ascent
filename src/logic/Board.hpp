@@ -10,6 +10,18 @@ class Board {
   public:
     static constexpr int kZoneLimit = 6; // limite de cartas por campo
 
+    // ── Metrica das zonas ─────────────────────────────────────────
+    // A largura/altura das zonas sai daqui: o campo tem exatamente o tamanho
+    // das kZoneLimit cartas que cabem nele, sem sobra.
+    static constexpr int kCardWidth = 100;
+    static constexpr int kCardHeight = 140;
+    static constexpr int kCardGap = 15;   // espaco entre cartas da mesma zona
+    static constexpr int kZonePadding = 5; // respiro entre a carta e a borda
+
+    static constexpr int kZoneWidth =
+        kZoneLimit * kCardWidth + (kZoneLimit - 1) * kCardGap + 2 * kZonePadding;
+    static constexpr int kZoneHeight = kCardHeight + 2 * kZonePadding;
+
   private:
     // As zonas sao privadas de proposito: toda entrada/saida de carta passa
     // pelos metodos do Board, que aplicam os limites, reorganizam o layout e
