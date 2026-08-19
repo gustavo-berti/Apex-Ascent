@@ -448,16 +448,9 @@ bool Board::CanDeclareAttack() const {
 //  Render
 // ═══════════════════════════════════════════════════════════════════
 
-void Board::RenderZoneBorders(SDL_Renderer *renderer) const {
-    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-    SDL_RenderDrawRect(renderer, &enemyPreparationRect);
-    SDL_RenderDrawRect(renderer, &enemyBattleRect);
-    SDL_RenderDrawRect(renderer, &playerBattleRect);
-    SDL_RenderDrawRect(renderer, &playerPreparationRect);
-}
-
+// As zonas nao sao desenhadas: o proprio fundo (arena.png) marca o campo.
+// Os rects continuam valendo para posicionar as cartas e testar cliques.
 void Board::Render(SDL_Renderer *renderer) const {
-    RenderZoneBorders(renderer);
     for (auto *c : enemyPreparationCards)
         c->Render(renderer);
     for (auto *c : enemyBattleCards)

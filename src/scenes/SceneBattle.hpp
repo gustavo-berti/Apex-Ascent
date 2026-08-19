@@ -49,6 +49,7 @@ class SceneBattle : public GameWorld {
     SDL_Rect playerBattleZone;
     SDL_Rect playerPreparationZone;
     SDL_Rect playerHandZone;
+    SDL_Texture *background = nullptr;
 
     // ── Botões ────────────────────────────────────────────────────
     SDL_Rect btnNextPhase;

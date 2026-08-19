@@ -15,6 +15,10 @@
 SceneBattle::SceneBattle() : board(turnManager), draggedCard(nullptr) {}
 
 SceneBattle::~SceneBattle() {
+    if (background) {
+        SDL_DestroyTexture(background);
+        background = nullptr;
+    }
     if (font) {
         TTF_CloseFont(font);
         font = nullptr;
@@ -813,6 +817,20 @@ void SceneBattle::Update(float dt) {
 
 void SceneBattle::Render(SDL_Renderer *renderer) {
     hasRendered = true;
+
+    // O fundo vem primeiro: qualquer coisa desenhada antes dele seria apagada.
+    int w, h;
+    SDL_RenderGetLogicalSize(renderer, &w, &h);
+    if (w == 0 || h == 0) SDL_GetRendererOutputSize(renderer, &w, &h);
+
+    if (background) {
+        SDL_Rect dst = {0, 0, w, h};
+        SDL_RenderCopy(renderer, background, nullptr, &dst);
+    } else {
+        SDL_SetRenderDrawColor(renderer, 20, 20, 40, 255);
+        SDL_RenderClear(renderer);
+    }
+
     board.Render(renderer);
     RenderDefensePhase(renderer);
     RenderHand(renderer);

@@ -145,7 +145,6 @@ class Board {
 
     // ── Render ────────────────────────────────────────────────────
     void Render(SDL_Renderer *renderer) const;
-    void RenderZoneBorders(SDL_Renderer *renderer) const;
 
     // ── Acesso externo ────────────────────────────────────────────
     const std::vector<Card *> &GetPlayerBattleCards() const { return playerBattleCards; }
