@@ -2586,44 +2586,5 @@
             ]
         }
     ],
-    "spells": [
-        {
-            "id": 57,
-            "display_name": "Negócios Legais",
-            "type": "FAST",
-            "rarity": "COMMON",
-            "mana": 3,
-            "description": "Compre 2 cartas",
-            "effects": [
-                {
-                    "trigger": "ON_SPELL_CAST",
-                    "action": "DRAW_CARDS",
-                    "target": "SELF",
-                    "condition": "NONE",
-                    "params": {
-                        "draw_count": 2
-                    }
-                }
-            ]
-        },
-        {
-            "id": 77,
-            "display_name": "Bomba Corrosiva",
-            "type": "SLOW",
-            "rarity": "LEGENDARY",
-            "mana": 6,
-            "description": "Dê apodrecer a todas as cartas no campo do oponente.",
-            "effects": [
-                {
-                    "trigger": "ON_SPELL_CAST",
-                    "action": "APPLY_STATUS_TO_ENEMY",
-                    "target": "ENEMY_ALL",
-                    "condition": "NONE",
-                    "params": {
-                        "ability_to_apply": "ROT"
-                    }
-                }
-            ]
-        }
-    ]
+    "spells": []
 }

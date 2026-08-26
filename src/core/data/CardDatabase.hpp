@@ -45,4 +45,7 @@ class CardDatabase {
 
     const CreatureData *GetCreature(const int &id) const;
     const SpellData *GetSpell(const int &id) const;
+
+    const std::unordered_map<int, CreatureData> &GetAllCreatures() const { return creatureCards; }
+    const std::unordered_map<int, SpellData> &GetAllSpells() const { return spellCards; }
 };

@@ -2,6 +2,7 @@
 #include "../core/GameManager.hpp"
 #include "../objects/ui/UIRenderUtils.hpp"
 #include "../scenes/SceneBattle.hpp"
+#include "../scenes/SceneCollection.hpp"
 #include <SDL2/SDL_ttf.h>
 #include <iostream>
 
@@ -69,12 +70,11 @@ void SceneMenu::HandleInput(SDL_Event &event) {
                             gameManager.GetRenderer());
         gameManager.ChangeMusic("assets/audio/music/battle_theme.mp3");
         gameManager.ChangeScene(battle);
-    }
-    if (IsButtonClicked(buttons[1], event)) {
-        std::cout << "Coleção clicado" << std::endl;
-        // GameManager.ChangeScene(new SceneCollection());
-    }
-    if (IsButtonClicked(buttons[2], event)) {
+    } else if (IsButtonClicked(buttons[1], event)) {
+        SceneCollection *collection = new SceneCollection(gameManager);
+        collection->Initialize(gameManager.GetRenderer());
+        gameManager.ChangeScene(collection);
+    } else if (IsButtonClicked(buttons[2], event)) {
         std::cout << "Sair clicado" << std::endl;
         SDL_Event quit;
         quit.type = SDL_QUIT;
