@@ -53,7 +53,6 @@ class SceneBattle : public GameWorld {
 
     // ── Botões ────────────────────────────────────────────────────
     SDL_Rect btnNextPhase;
-    SDL_Rect btnAttack;
     SDL_Rect btnCancel;
 
     // ── Estado da cena ────────────────────────────────────────────
@@ -123,7 +122,6 @@ class SceneBattle : public GameWorld {
     void CancelSummon();
 
     // ── Combate ───────────────────────────────────────────────────
-    void HandleAttackButton();
     void HandleCancelAttack();
     void HandleConfirmAttack();
     void CheckBattleOutcome(const CombatResult &result);
@@ -142,7 +140,6 @@ class SceneBattle : public GameWorld {
 
     // ── Input ─────────────────────────────────────────────────────
     bool HandleNextPhaseClick(const SDL_Event &e);
-    bool HandleAttackClick(const SDL_Event &e);
     bool HandleCancelClick(const SDL_Event &e);
     bool HandleHandCardClick(const SDL_Event &e);
     bool HandleBattleCardClick(const SDL_Event &e);

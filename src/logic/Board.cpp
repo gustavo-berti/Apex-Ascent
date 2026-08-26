@@ -219,7 +219,7 @@ int Board::DeclareAllAttackers() {
 
 void Board::ToggleAttackerSelection(Card *card, std::vector<Card *> &objectsPool) {
     (void)objectsPool;
-    if (turnManager.GetCombatStep() != CombatStep::ATTACK_MAGIC) return;
+    if (!CanPlayerSelectAttackers()) return;
 
     if (IsCardSelectedAsAttacker(card))
         UndeclareAttacker(card, true);
@@ -431,17 +431,10 @@ bool Board::IsCardSelectedAsAttacker(const Card *card) const {
            selectedAttackers.end();
 }
 
-bool Board::ShouldShowAttackButton() const {
-    return !playerPreparationCards.empty() && turnManager.IsPlayerTurn() &&
-           turnManager.GetPhase() == BattlePhase::COMBAT && turnManager.CanAttackThisTurn() &&
-           (turnManager.GetCombatStep() == CombatStep::DECLARE_ATTACKERS ||
-            turnManager.GetCombatStep() == CombatStep::ATTACK_MAGIC);
-}
-
-bool Board::CanDeclareAttack() const {
+bool Board::CanPlayerSelectAttackers() const {
     return turnManager.IsPlayerTurn() && turnManager.GetPhase() == BattlePhase::COMBAT &&
-           turnManager.GetCombatStep() == CombatStep::DECLARE_ATTACKERS &&
-           turnManager.CanAttackThisTurn() && !playerPreparationCards.empty();
+           turnManager.CanAttackThisTurn() &&
+           turnManager.GetCombatStep() == CombatStep::DECLARE_ATTACKERS;
 }
 
 // ═══════════════════════════════════════════════════════════════════

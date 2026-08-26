@@ -78,7 +78,6 @@ void SceneBattle::Initialize(SDL_Renderer *renderer) {
 
     btnCancel = {1420, 300, 150, 50};
     btnNextPhase = {1420, 360, 150, 50};
-    btnAttack = {1420, 420, 150, 50};
 
     board.SetZoneRects(playerPreparationZone, playerBattleZone, enemyPreparationZone,
                        enemyBattleZone);
@@ -272,8 +271,9 @@ void SceneBattle::RunAIDecideAttack() {
         std::cout << "[IA] Vantagem numerica. ATACANDO com " << board.GetAttackers().size()
                   << " criatura(s)!" << std::endl;
 
+        // O avanco do passo fica no AIConfirmAttack, pro render mostrar as
+        // criaturas ja no campo de batalha antes da defesa comecar.
         scriptedState = ScriptedState::AIConfirmAttack;
-        turnManager.AdvanceCombatStep(); // Declarar Atacantes → Magias do Atacante
     } else {
         std::cout << "[IA] Sem vantagem (" << enemyCount << " vs " << playerCount
                   << "). Abortou o ataque." << std::endl;
@@ -285,10 +285,15 @@ void SceneBattle::RunAIDecideAttack() {
 }
 
 void SceneBattle::RunAIConfirmAttack() {
+    scriptedState = ScriptedState::Idle;
+    // Mesmo caminho do jogador: ConfirmAttack marca o ataque como declarado
+    if (!board.ConfirmAttack()) {
+        turnManager.AdvancePhase();
+        return;
+    }
     std::cout << "[IA] Confirmou o ataque com " << board.GetAttackers().size() << " criatura(s)."
               << std::endl;
-    scriptedState = ScriptedState::Idle;
-    turnManager.AdvanceCombatStep(); // Magias do Atacante → Declarar Defensores (jogador defende)
+    turnManager.AdvanceCombatStep(); // Declarar Atacantes → Declarar Defensores
 }
 
 // ── Defesa da IA (quando o jogador ataca) ─────────────────────────
@@ -500,22 +505,17 @@ bool SceneBattle::CanPlaySpell() const {
     auto p = turnManager.GetPhase();
     auto s = turnManager.GetCombatStep();
     return p == BattlePhase::MAIN || p == BattlePhase::SECOND_MAIN ||
-           s == CombatStep::ATTACK_MAGIC || s == CombatStep::DECLARE_DEFENDERS;
+           s == CombatStep::DECLARE_ATTACKERS || s == CombatStep::DECLARE_DEFENDERS;
 }
 
 // ═══════════════════════════════════════════════════════════════════
 //  Combate
 // ═══════════════════════════════════════════════════════════════════
 
-void SceneBattle::HandleAttackButton() {
-    if (!board.CanDeclareAttack()) return;
-    turnManager.AdvanceCombatStep();
-}
-
 void SceneBattle::HandleCancelAttack() {
-    if (turnManager.GetCombatStep() != CombatStep::ATTACK_MAGIC) return;
+    if (!board.CanPlayerSelectAttackers()) return;
     board.ReturnAllAttackersToPreparation(cardObjects);
-    std::cout << "[COMBATE] Ataque cancelado." << std::endl;
+    std::cout << "[COMBATE] Selecao de atacantes desfeita." << std::endl;
 }
 
 void SceneBattle::HandleConfirmAttack() {
@@ -616,7 +616,6 @@ void SceneBattle::HandleInput(SDL_Event &event) {
     }
 
     if (HandleCancelClick(event)) return;
-    if (HandleAttackClick(event)) return;
     if (HandleNextPhaseClick(event)) return;
     if (!turnManager.IsPlayerTurn()) return;
     if (HandleBattleCardClick(event)) return;
@@ -722,28 +721,22 @@ bool SceneBattle::HandleNextPhaseClick(const SDL_Event &e) {
     auto phase = turnManager.GetPhase();
     auto step = turnManager.GetCombatStep();
 
-    if (phase == BattlePhase::COMBAT && step == CombatStep::ATTACK_MAGIC) {
-        HandleConfirmAttack();
-        return true;
-    }
     if (phase == BattlePhase::COMBAT && step == CombatStep::DECLARE_ATTACKERS) {
-        turnManager.AdvancePhase();
+        // Passou sem declarar ninguem: pula o combate e vai pra proxima fase
+        if (!board.HasSelectedAttackers()) {
+            std::cout << "[COMBATE] Nenhum atacante declarado, passando a fase." << std::endl;
+            turnManager.AdvancePhase();
+            return true;
+        }
+        HandleConfirmAttack(); // → Declarar Defensores
         return true;
     }
     turnManager.AdvancePhase();
     return true;
 }
 
-bool SceneBattle::HandleAttackClick(const SDL_Event &e) {
-    if (!board.ShouldShowAttackButton()) return false;
-    if (e.type != SDL_MOUSEBUTTONDOWN || e.button.button != SDL_BUTTON_LEFT) return false;
-    if (!GameManager::IsPointInsideRect(e.button.x, e.button.y, btnAttack)) return false;
-    HandleAttackButton();
-    return true;
-}
-
 bool SceneBattle::HandleCancelClick(const SDL_Event &e) {
-    if (turnManager.GetCombatStep() != CombatStep::ATTACK_MAGIC) return false;
+    if (!board.CanPlayerSelectAttackers() || !board.HasSelectedAttackers()) return false;
     if (e.type != SDL_MOUSEBUTTONDOWN || e.button.button != SDL_BUTTON_LEFT) return false;
     if (!GameManager::IsPointInsideRect(e.button.x, e.button.y, btnCancel)) return false;
     HandleCancelAttack();
@@ -774,7 +767,7 @@ bool SceneBattle::HandleHandCardClick(const SDL_Event &e) {
 }
 
 bool SceneBattle::HandleBattleCardClick(const SDL_Event &e) {
-    if (turnManager.GetCombatStep() != CombatStep::ATTACK_MAGIC) return false;
+    if (!board.CanPlayerSelectAttackers()) return false;
 
     for (auto *card : board.GetPlayerBattleCards()) {
         if (!card) continue;
@@ -910,27 +903,22 @@ void SceneBattle::RenderButtons(SDL_Renderer *renderer) const {
     if (IsBattleOver() || summonPending.active) return;
 
     bool isPlayer = turnManager.IsPlayerTurn();
-    auto step = turnManager.GetCombatStep();
     const bool defending = IsPlayerDeclaringDefenders();
 
     const SDL_Color borderColor = {255, 255, 255, 255};
     const SDL_Color textColor = {255, 255, 255, 255};
 
-    const bool confirmLabel =
-        defending || (turnManager.GetPhase() == BattlePhase::COMBAT && isPlayer &&
-                      step == CombatStep::ATTACK_MAGIC);
+    // Com atacante escolhido o botao confirma o ataque; sem nenhum, ele so passa a fase.
+    const bool selectingAttackers = board.CanPlayerSelectAttackers();
+    const bool hasAttackers = board.HasSelectedAttackers();
+    const bool confirmLabel = defending || (selectingAttackers && hasAttackers);
     const std::string nextPhaseLabel = confirmLabel ? "Confirmar" : "Próximo";
 
     ui::UIRenderUtils::RenderButton(renderer, btnNextPhase, nextPhaseLabel, fontSmall,
                                     isPlayer || defending, {220, 160, 0, 255}, {250, 200, 40, 255},
                                     borderColor, textColor);
 
-    if (board.ShouldShowAttackButton())
-        ui::UIRenderUtils::RenderButton(renderer, btnAttack, "Atacar", fontSmall,
-                                        board.CanDeclareAttack(), {200, 50, 50, 255},
-                                        {230, 80, 80, 255}, borderColor, textColor);
-
-    if (step == CombatStep::ATTACK_MAGIC && isPlayer)
+    if (selectingAttackers && hasAttackers)
         ui::UIRenderUtils::RenderButton(renderer, btnCancel, "Cancelar", fontSmall, true,
                                         {80, 80, 200, 255}, {120, 120, 240, 255}, borderColor,
                                         textColor);
@@ -1078,7 +1066,7 @@ void SceneBattle::RenderHUD(SDL_Renderer *renderer) const {
 
     if (turnManager.GetPhase() == BattlePhase::COMBAT) {
         int stepIdx = static_cast<int>(turnManager.GetCombatStep());
-        for (int i = 1; i <= 4; ++i) {
+        for (int i = 1; i <= kCombatStepCount; ++i) {
             SDL_Rect pip = {15 + (i - 1) * 44, 75, 36, 6};
             SDL_SetRenderDrawColor(renderer, i <= stepIdx ? 255 : 40, i <= stepIdx ? 100 : 40, 40,
                                    255);

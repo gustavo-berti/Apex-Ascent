@@ -140,8 +140,11 @@ class Board {
     bool HasSelectedAttackers() const { return !selectedAttackers.empty(); }
     bool IsAttackDeclared() const { return attackDeclared; }
     bool IsCardSelectedAsAttacker(const Card *card) const;
-    bool ShouldShowAttackButton() const;
-    bool CanDeclareAttack() const;
+
+    // O jogador pode mexer nos atacantes agora? Vale tanto para declarar
+    // (clique numa criatura da preparacao) quanto para desfazer (clique numa
+    // criatura ja no campo de batalha).
+    bool CanPlayerSelectAttackers() const;
 
     // ── Render ────────────────────────────────────────────────────
     void Render(SDL_Renderer *renderer) const;
