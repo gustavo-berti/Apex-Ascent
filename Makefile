@@ -17,8 +17,8 @@ SOURCES = ./src/main.cpp ./src/core/GameManager.cpp \
           ./libs/my-lib/src/memory-pool.cpp ./src/core/data/CardDatabase.cpp \
           ./src/core/parsers/CardParser.cpp ./src/core/enums/EnumConverter.cpp \
           ./src/logic/CardFactory.cpp ./src/scenes/SceneBattle.cpp \
-          ./src/logic/Board.cpp ./src/scenes/SceneMenu.cpp ./src/logic/Player.cpp ./src/scenes/SceneCollection.cpp \
-          ./src/logic/Opponent.cpp
+          ./src/logic/Board.cpp ./src/scenes/SceneMenu.cpp ./src/logic/Player.cpp \
+          ./src/logic/Opponent.cpp ./src/scenes/SceneCollection.cpp \
 
 OBJECTS = $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(SOURCES))
 
