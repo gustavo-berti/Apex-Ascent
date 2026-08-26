@@ -19,6 +19,10 @@ SceneBattle::~SceneBattle() {
         SDL_DestroyTexture(background);
         background = nullptr;
     }
+    if (cardBack) {
+        SDL_DestroyTexture(cardBack);
+        cardBack = nullptr;
+    }
     if (font) {
         TTF_CloseFont(font);
         font = nullptr;
@@ -41,6 +45,13 @@ void SceneBattle::Initialize(SDL_Renderer *renderer) {
     } else {
         background = SDL_CreateTextureFromSurface(renderer, surface);
         SDL_FreeSurface(surface);
+    }
+
+    if (SDL_Surface *backSurface = IMG_Load("assets/images/cards/card_back.png")) {
+        cardBack = SDL_CreateTextureFromSurface(renderer, backSurface);
+        SDL_FreeSurface(backSurface);
+    } else {
+        std::cerr << "Erro ao carregar o verso da carta: " << IMG_GetError() << std::endl;
     }
 
     if (!cardDatabase.LoadFromJson("assets/data/cards.json"))
@@ -75,6 +86,11 @@ void SceneBattle::Initialize(SDL_Renderer *renderer) {
     playerBattleZone = {boardX, enemyBattleZone.y + zoneH + kZoneGap, boardWidth, zoneH};
     playerPreparationZone = {boardX, playerBattleZone.y + zoneH + kZoneGap, boardWidth, zoneH};
     playerHandZone = {0, handY, kScreenW, kHandH};
+
+    // A mao do oponente fica pendurada na borda de cima: carta em tamanho
+    // normal, com 1/3 dela para fora da tela.
+    constexpr int kOppHandHiddenPart = Board::kCardHeight / 3;
+    opponentHandZone = {0, -kOppHandHiddenPart, kScreenW, Board::kCardHeight};
 
     btnCancel = {1420, 300, 150, 50};
     btnNextPhase = {1420, 360, 150, 50};
@@ -245,6 +261,7 @@ void SceneBattle::RunAISummonStep() {
 
         auto &hand = opponentPiles.hand;
         hand.erase(std::remove(hand.begin(), hand.end(), card), hand.end());
+        RearrangeOpponentHand();
 
         std::cout << "[IA] >>> INVOCOU: " << card->GetName() << " (Visível no campo!)" << std::endl;
     }
@@ -488,6 +505,17 @@ void SceneBattle::RearrangeHand() {
     const int y = playerHandZone.y + (playerHandZone.h - Board::kCardHeight) / 2;
     for (int i = 0; i < n; ++i)
         playerPiles.hand[i]->SetPosition(startX + i * (Board::kCardWidth + Board::kCardGap), y);
+}
+
+void SceneBattle::RearrangeOpponentHand() {
+    const int n = static_cast<int>(opponentPiles.hand.size());
+    if (n == 0) return;
+
+    const int totalW = n * Board::kCardWidth + (n - 1) * Board::kCardGap;
+    const int startX = opponentHandZone.x + (opponentHandZone.w - totalW) / 2;
+    const int y = opponentHandZone.y;
+    for (int i = 0; i < n; ++i)
+        opponentPiles.hand[i]->SetPosition(startX + i * (Board::kCardWidth + Board::kCardGap), y);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -827,6 +855,7 @@ void SceneBattle::Render(SDL_Renderer *renderer) {
     board.Render(renderer);
     RenderDefensePhase(renderer);
     RenderHand(renderer);
+    RenderOpponentHand(renderer);
     RenderButtons(renderer);
     RenderMana(renderer);
     RenderHealthBars(renderer);
@@ -897,6 +926,25 @@ void SceneBattle::RenderSummonPending(SDL_Renderer *renderer) const {
 void SceneBattle::RenderHand(SDL_Renderer *renderer) const {
     for (auto *c : playerPiles.hand)
         c->Render(renderer);
+}
+
+// Card::Render mostraria a arte, a mana e a raridade — a mao do oponente
+// desenha so o verso, na posicao que o RearrangeOpponentHand definiu.
+void SceneBattle::RenderOpponentHand(SDL_Renderer *renderer) const {
+    for (const Card *card : opponentPiles.hand) {
+        if (!card) continue;
+        SDL_Rect dst = {card->GetX(), card->GetY(), Board::kCardWidth, Board::kCardHeight};
+
+        if (cardBack) {
+            // Invertida: a mao do oponente e vista de cabeca pra baixo
+            SDL_RenderCopyEx(renderer, cardBack, nullptr, &dst, 0.0, nullptr, SDL_FLIP_VERTICAL);
+        } else {
+            SDL_SetRenderDrawColor(renderer, 60, 40, 90, 255);
+            SDL_RenderFillRect(renderer, &dst);
+            SDL_SetRenderDrawColor(renderer, 200, 200, 220, 255);
+            SDL_RenderDrawRect(renderer, &dst);
+        }
+    }
 }
 
 void SceneBattle::RenderButtons(SDL_Renderer *renderer) const {
@@ -1190,5 +1238,8 @@ void SceneBattle::DrawCards(Entity *entity, int amount) {
         }
     }
 
-    if (entity == currentState) RearrangeHand();
+    if (entity == currentState)
+        RearrangeHand();
+    else
+        RearrangeOpponentHand();
 }

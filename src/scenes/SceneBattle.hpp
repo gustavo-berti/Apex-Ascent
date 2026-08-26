@@ -49,7 +49,12 @@ class SceneBattle : public GameWorld {
     SDL_Rect playerBattleZone;
     SDL_Rect playerPreparationZone;
     SDL_Rect playerHandZone;
+    SDL_Rect opponentHandZone;
     SDL_Texture *background = nullptr;
+
+    // Mao do oponente: cartas de costas, no tamanho normal, penduradas na
+    // borda de cima com metade da carta fora da tela.
+    SDL_Texture *cardBack = nullptr;
 
     // ── Botões ────────────────────────────────────────────────────
     SDL_Rect btnNextPhase;
@@ -153,6 +158,7 @@ class SceneBattle : public GameWorld {
     void BuildDrawPile(Entity *entity);
     void ShuffleDrawPile(Entity* entity);
     void RearrangeHand();
+    void RearrangeOpponentHand();
         BattlePiles& GetPilesFor(Entity* entity) {
         if (entity == currentState) return playerPiles;
         return opponentPiles;
@@ -161,6 +167,7 @@ class SceneBattle : public GameWorld {
     // ── Render ────────────────────────────────────────────────────
     void RenderButtons(SDL_Renderer *renderer) const;
     void RenderHand(SDL_Renderer *renderer) const;
+    void RenderOpponentHand(SDL_Renderer *renderer) const;
     void RenderHUD(SDL_Renderer *renderer) const;
     void RenderMana(SDL_Renderer *renderer) const;
     void RenderHealthBars(SDL_Renderer *renderer) const;
