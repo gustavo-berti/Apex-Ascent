@@ -13,11 +13,13 @@ enum class BattlePhase {
 
 enum class CombatStep {
     NONE,
-    DECLARE_ATTACKERS, // Selecionar criaturas atacantes (ou passar)
-    ATTACK_MAGIC,      // Magia do atacante; pode cancelar o ataque aqui
-    DECLARE_DEFENDERS, // Oponente defende (automático por enquanto)
-    RESOLUTION,        // Cálculo do combate (implementar depois)
+    DECLARE_ATTACKERS, // Selecionar criaturas atacantes (ou passar) e confirmar
+    DECLARE_DEFENDERS, // Lado defensor escolhe os bloqueios
+    RESOLUTION,        // Cálculo do combate
 };
+
+// Quantos sub-passos de combate existem depois de NONE (usado pelo HUD).
+inline constexpr int kCombatStepCount = 3;
 
 class TurnManager {
   private:
@@ -101,9 +103,6 @@ class TurnManager {
     bool AdvanceCombatStep() {
         switch (combatStep) {
         case CombatStep::DECLARE_ATTACKERS:
-            SetCombatStep(CombatStep::ATTACK_MAGIC);
-            return true;
-        case CombatStep::ATTACK_MAGIC:
             SetCombatStep(CombatStep::DECLARE_DEFENDERS);
             return true;
         case CombatStep::DECLARE_DEFENDERS:
@@ -165,8 +164,6 @@ class TurnManager {
             return "";
         case CombatStep::DECLARE_ATTACKERS:
             return "Declarar Atacantes";
-        case CombatStep::ATTACK_MAGIC:
-            return "Magias do Atacante";
         case CombatStep::DECLARE_DEFENDERS:
             return "Declarar Defensores";
         case CombatStep::RESOLUTION:

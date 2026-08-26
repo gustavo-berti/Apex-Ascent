@@ -49,10 +49,10 @@ class SceneBattle : public GameWorld {
     SDL_Rect playerBattleZone;
     SDL_Rect playerPreparationZone;
     SDL_Rect playerHandZone;
+    SDL_Texture *background = nullptr;
 
     // ── Botões ────────────────────────────────────────────────────
     SDL_Rect btnNextPhase;
-    SDL_Rect btnAttack;
     SDL_Rect btnCancel;
 
     // ── Estado da cena ────────────────────────────────────────────
@@ -62,6 +62,21 @@ class SceneBattle : public GameWorld {
     CardDatabase cardDatabase;
     Card *draggedCard = nullptr;
     BattleOutcome outcome = BattleOutcome::ONGOING;
+    bool hasRendered = false;
+    bool matchStartPending = false;
+
+    // ── Passos pausados (compras iniciais + turno da IA) ────────────
+    ScriptedState scriptedState = ScriptedState::Idle;
+    float scriptedTimer = 0.f;
+    static constexpr float kScriptedDelay = 0.4f; // pausa entre passos, pro render ficar perceptivel
+    int dealCount = 0;
+    std::vector<Card *> aiCardsToPlay;
+    size_t aiCardsToPlayIndex = 0;
+    std::vector<DefenderAssignment> aiDefensePlan;
+    size_t aiDefensePlanIndex = 0;
+
+    // ── Declaração de defensores do jogador ───────────────────────
+    Card *pendingDefender = nullptr; // criatura escolhida, esperando o atacante
 
     // ── Fontes ────────────────────────────────────────────────────
     TTF_Font *font = nullptr;      // grande — vitória/derrota
@@ -84,6 +99,19 @@ class SceneBattle : public GameWorld {
     // ── Lógica de turno ───────────────────────────────────────────
     void HandleTurnStart();
     void RunOpponentTurn();
+    void StartMatchFlow();
+
+    // ── Passos pausados ───────────────────────────────────────────
+    void AdvanceScriptedState();
+    void RunAITurnStart();
+    void RunAIEvaluateHand();
+    void RunAISummonStep();
+    void RunAIDecideAttack();
+    void RunAIConfirmAttack();
+    void RunAIDeclareDefenders();
+    void RunAIDefendStep();
+    void RunAIConfirmDefense();
+    void RunAIEndTurn();
 
     // ── Mana ──────────────────────────────────────────────────────
     bool SpendMana(Entity *entity, int cost, const std::string &cardName);
@@ -94,10 +122,16 @@ class SceneBattle : public GameWorld {
     void CancelSummon();
 
     // ── Combate ───────────────────────────────────────────────────
-    void HandleAttackButton();
     void HandleCancelAttack();
     void HandleConfirmAttack();
     void CheckBattleOutcome(const CombatResult &result);
+
+    // ── Defesa ────────────────────────────────────────────────────
+    void BeginDefenderDeclaration();
+    void ConfirmDefense();
+    void ClearDefense();
+    void SendDeadCardsToDiscard(const CombatResult &result);
+    bool IsPlayerDeclaringDefenders() const;
 
     // ── Helpers de estado ─────────────────────────────────────────
     bool CanPlayCreature() const;
@@ -106,11 +140,11 @@ class SceneBattle : public GameWorld {
 
     // ── Input ─────────────────────────────────────────────────────
     bool HandleNextPhaseClick(const SDL_Event &e);
-    bool HandleAttackClick(const SDL_Event &e);
     bool HandleCancelClick(const SDL_Event &e);
     bool HandleHandCardClick(const SDL_Event &e);
     bool HandleBattleCardClick(const SDL_Event &e);
     bool HandleSummonPendingInput(const SDL_Event &e);
+    bool HandleDefenseInput(const SDL_Event &e);
 
     // ── Deck ──────────────────────────────────────────────────────
     bool SetCurrentPlayerState(Player *p);
@@ -132,6 +166,10 @@ class SceneBattle : public GameWorld {
     void RenderHealthBars(SDL_Renderer *renderer) const;
     void RenderOutcome(SDL_Renderer *renderer) const;
     void RenderSummonPending(SDL_Renderer *renderer) const;
+    void RenderDefensePhase(SDL_Renderer *renderer) const;
+    void RenderCardOutline(SDL_Renderer *renderer, const Card *card, SDL_Color color) const;
+    void RenderLink(SDL_Renderer *renderer, const Card *from, const Card *to,
+                    SDL_Color color) const;
     void RenderButton(SDL_Renderer *renderer, SDL_Rect r, Uint8 red, Uint8 grn, Uint8 blu,
                       bool enabled = true) const;
     void RenderText(SDL_Renderer *renderer, TTF_Font *f, const char *text, SDL_Color color, int x,

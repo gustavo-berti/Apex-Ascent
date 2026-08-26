@@ -1,13 +1,42 @@
 #pragma once
 #include "../objects/cards/types/CardTypes.hpp"
+#include "CombatTypes.hpp"
 #include "Entity.hpp"
 #include <random>
+#include <vector>
+
+class Card;
+
+// ── Passos pausados (compras iniciais + turno da IA) ───────────────
+// Cada estado representa uma acao visivel; o SceneBattle avanca um estado
+// por vez, com uma pausa entre eles, para o render ficar perceptivel.
+enum class ScriptedState {
+    Idle,
+    DealPlayerHand,
+    DealOpponentHand,
+    AITurnStart,
+    AIEvaluateHand,
+    AISummoning,
+    AIDecideAttack,
+    AIConfirmAttack,
+    AIDeclareDefenders,
+    AIDefendStep,
+    AIConfirmDefense,
+    AIEndTurn,
+};
 
 // ── Opponent ──────────────────────────────────────────────────────
 struct Opponent : public Entity {
     bool isGuardian = false;
     Race deckType = Race::NONE;
     int deckPart = 0;
+
+    // ── Acoes da IA ───────────────────────────────────────────────────
+    std::vector<Card *> ChooseCreaturesToPlay(const std::vector<Card *> &hand,
+                                              int freeFieldSlots) const;
+    bool ShouldAttack(int enemyFieldCount, int playerFieldCount) const;
+    std::vector<DefenderAssignment> ChooseDefenders(const std::vector<Card *> &attackers,
+                                                    const std::vector<Card *> &availableDefenders) const;
 
     static int RandomInt(int minValue, int maxValue) {
         if (minValue > maxValue) std::swap(minValue, maxValue);
