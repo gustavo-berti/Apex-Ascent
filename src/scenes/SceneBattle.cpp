@@ -1,5 +1,6 @@
 #include "SceneBattle.hpp"
 #include "../core/GameManager.hpp"
+#include "SceneMenu.hpp"
 #include "../logic/CardFactory.hpp"
 #include "../objects/cards/SpellCard.hpp"
 #include "../objects/ui/UIRenderUtils.hpp"
@@ -12,7 +13,8 @@
 //  Construtor / Destrutor
 // ═══════════════════════════════════════════════════════════════════
 
-SceneBattle::SceneBattle() : board(turnManager), draggedCard(nullptr) {}
+SceneBattle::SceneBattle(GameManager &manager)
+    : board(turnManager), gameManager(manager), draggedCard(nullptr) {}
 
 SceneBattle::~SceneBattle() {
     if (background) {
@@ -23,14 +25,8 @@ SceneBattle::~SceneBattle() {
         SDL_DestroyTexture(cardBack);
         cardBack = nullptr;
     }
-    if (font) {
-        TTF_CloseFont(font);
-        font = nullptr;
-    }
-    if (fontSmall) {
-        TTF_CloseFont(fontSmall);
-        fontSmall = nullptr;
-    }
+    // As fontes pertencem ao cache do UIRenderUtils e sobrevivem a cena:
+    // fecha-las aqui deixaria o ponteiro do cache pendurado.
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -94,6 +90,8 @@ void SceneBattle::Initialize(SDL_Renderer *renderer) {
 
     btnCancel = {1420, 300, 150, 50};
     btnNextPhase = {1420, 360, 150, 50};
+
+    BuildOutcomeButtons();
 
     board.SetZoneRects(playerPreparationZone, playerBattleZone, enemyPreparationZone,
                        enemyBattleZone);
@@ -632,7 +630,10 @@ void SceneBattle::SendDeadCardsToDiscard(const CombatResult &result) {
 // ═══════════════════════════════════════════════════════════════════
 
 void SceneBattle::HandleInput(SDL_Event &event) {
-    if (IsBattleOver()) return;
+    if (IsBattleOver()) {
+        HandleOutcomeInput(event);
+        return; // HandleOutcomeInput pode ter deletado esta cena
+    }
     if (event.type != SDL_MOUSEBUTTONDOWN) return;
     if (summonPending.active) {
         HandleSummonPendingInput(event);
@@ -649,6 +650,58 @@ void SceneBattle::HandleInput(SDL_Event &event) {
     if (!turnManager.IsPlayerTurn()) return;
     if (HandleBattleCardClick(event)) return;
     HandleHandCardClick(event);
+}
+
+// ── Input do fim de partida ───────────────────────────────────────
+
+// Os dois botoes ficam centralizados, logo abaixo do texto de vitoria/derrota.
+void SceneBattle::BuildOutcomeButtons() {
+    constexpr int btnW = 300;
+    constexpr int btnH = 60;
+    constexpr int btnGap = 40;
+    constexpr int rowX = (1600 - (2 * btnW + btnGap)) / 2;
+    constexpr int rowY = 900 / 2 + 90;
+
+    outcomeButtons.clear();
+    outcomeButtons.push_back({{rowX, rowY, btnW, btnH},
+                              "Tentar novamente",
+                              [this] { RestartBattle(); },
+                              ui::styles::kPrimary});
+    outcomeButtons.push_back({{rowX + btnW + btnGap, rowY, btnW, btnH},
+                              "Voltar ao menu",
+                              [this] { ReturnToMenu(); },
+                              ui::styles::kSecondary});
+}
+
+void SceneBattle::HandleOutcomeInput(const SDL_Event &e) {
+    if (e.type == SDL_MOUSEMOTION) {
+        outcomeHoveredIndex = ui::FindButtonAt(outcomeButtons, e.motion.x, e.motion.y);
+        return;
+    }
+
+    if (e.type != SDL_MOUSEBUTTONDOWN || e.button.button != SDL_BUTTON_LEFT) return;
+
+    ui::DispatchClick(outcomeButtons, e.button.x, e.button.y);
+    // O callback troca de cena e deleta esta: nada pode tocar em `this` aqui.
+}
+
+void SceneBattle::RestartBattle() {
+    std::cout << "[FIM] Reiniciando a partida contra o mesmo oponente." << std::endl;
+
+    SceneBattle *battle = new SceneBattle(gameManager);
+    battle->Initialize(gameManager.GetRenderer());
+    battle->StartBattle(&gameManager.GetPlayer(), &gameManager.GetOpponent(),
+                        gameManager.GetRenderer());
+    gameManager.ChangeScene(battle);
+}
+
+void SceneBattle::ReturnToMenu() {
+    std::cout << "[FIM] Voltando ao menu." << std::endl;
+
+    SceneMenu *menu = new SceneMenu(gameManager);
+    menu->Initialize(gameManager.GetRenderer());
+    gameManager.ChangeMusic("assets/audio/music/menu_theme.mp3");
+    gameManager.ChangeScene(menu);
 }
 
 // ── Input da declaração de defensores ─────────────────────────────
@@ -825,7 +878,7 @@ void SceneBattle::Update(float dt) {
         StartMatchFlow();
     }
 
-    if (scriptedState != ScriptedState::Idle) {
+    if (scriptedState != ScriptedState::Idle && !IsBattleOver()) {
         scriptedTimer += dt;
         if (scriptedTimer >= kScriptedDelay) {
             scriptedTimer = 0.f;
@@ -1141,8 +1194,10 @@ void SceneBattle::RenderOutcome(SDL_Renderer *renderer) const {
     int textH = 0;
     TTF_SizeUTF8(font, text, &textW, &textH);
     const int textX = (1600 - textW) / 2;
-    const int textY = (900 - textH) / 2;
+    const int textY = outcomeButtons.front().rect.y - 60 - textH;
     ui::UIRenderUtils::RenderText(renderer, text, textX, textY, color, font);
+
+    ui::RenderButtons(renderer, outcomeButtons, fontSmall, outcomeHoveredIndex);
 }
 
 // ═══════════════════════════════════════════════════════════════════
