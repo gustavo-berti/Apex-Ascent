@@ -115,7 +115,8 @@ void SceneBattle::StartBattle(Player *playerState, Opponent *opp, SDL_Renderer *
     this->renderer = sdlRenderer;
     outcome = BattleOutcome::ONGOING;
     summonPending.Clear();
-    opponent->SetDeck(Race::PIXIE, 1);
+    // A raça e o nivel do oponente vem do menu (GameManager::SetOpponentDeck),
+    // entao o baralho ja esta montado aqui.
     ResetBattleState();
 
     matchStartPending = true;
