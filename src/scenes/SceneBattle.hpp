@@ -7,9 +7,12 @@
 #include "../logic/TurnManager.hpp"
 #include "../objects/cards/Card.hpp"
 #include "../objects/cards/CreatureCard.hpp"
+#include "../objects/ui/UIButton.hpp"
 #include <SDL2/SDL_ttf.h>
 #include <string>
 #include <vector>
+
+class GameManager;
 
 enum class BattleOutcome { ONGOING, PLAYER_WIN, PLAYER_LOSE };
 
@@ -60,7 +63,12 @@ class SceneBattle : public GameWorld {
     SDL_Rect btnNextPhase;
     SDL_Rect btnCancel;
 
+    // ── Botões do fim de partida ──────────────────────────────────
+    std::vector<ui::UIButton> outcomeButtons;
+    int outcomeHoveredIndex = -1;
+
     // ── Estado da cena ────────────────────────────────────────────
+    GameManager &gameManager;
     Player *currentState = nullptr;
     Opponent *opponent = nullptr;
     SDL_Renderer *renderer = nullptr;
@@ -150,6 +158,12 @@ class SceneBattle : public GameWorld {
     bool HandleBattleCardClick(const SDL_Event &e);
     bool HandleSummonPendingInput(const SDL_Event &e);
     bool HandleDefenseInput(const SDL_Event &e);
+    void HandleOutcomeInput(const SDL_Event &e); // pode destruir a cena
+
+    // ── Fim de partida ────────────────────────────────────────────
+    void BuildOutcomeButtons();
+    void RestartBattle(); // destroi a cena: nada pode rodar depois
+    void ReturnToMenu();  // destroi a cena: nada pode rodar depois
 
     // ── Deck ──────────────────────────────────────────────────────
     bool SetCurrentPlayerState(Player *p);
@@ -183,7 +197,7 @@ class SceneBattle : public GameWorld {
                     int y) const;
 
   public:
-    SceneBattle();
+    explicit SceneBattle(GameManager &manager);
     ~SceneBattle() override;
 
     void Initialize(SDL_Renderer *renderer) override;
