@@ -29,6 +29,10 @@ class SceneUI : public GameWorld {
     void RenderCenteredText(SDL_Renderer *renderer, TTF_Font *f, const std::string &text, int y,
                             SDL_Color color) const;
 
+    // Desenhado antes de tudo. A pausa sobrescreve para escurecer o que ja esta
+    // na tela em vez de apagar a cena que ficou embaixo dela.
+    virtual void RenderBackground(SDL_Renderer *renderer);
+
     // Desenhado entre o titulo e os botoes.
     virtual void RenderContent(SDL_Renderer *renderer) { (void)renderer; }
 

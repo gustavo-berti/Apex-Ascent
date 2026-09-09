@@ -16,6 +16,7 @@ SOURCES = ./src/main.cpp ./src/core/GameManager.cpp \
           ./src/core/parsers/CardParser.cpp ./src/core/enums/EnumConverter.cpp \
           ./src/logic/CardFactory.cpp ./src/scenes/SceneBattle.cpp \
           ./src/logic/Board.cpp ./src/scenes/SceneUI.cpp ./src/scenes/SceneMenu.cpp \
+          ./src/scenes/ScenePause.cpp \
           ./src/logic/Player.cpp \
           ./src/logic/Opponent.cpp
 

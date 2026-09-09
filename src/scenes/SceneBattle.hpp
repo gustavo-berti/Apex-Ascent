@@ -8,7 +8,9 @@
 #include "../objects/cards/Card.hpp"
 #include "../objects/cards/CreatureCard.hpp"
 #include "../objects/ui/UIButton.hpp"
+#include "ScenePause.hpp"
 #include <SDL2/SDL_ttf.h>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -62,6 +64,7 @@ class SceneBattle : public GameWorld {
     // ── Botões ────────────────────────────────────────────────────
     SDL_Rect btnNextPhase;
     SDL_Rect btnCancel;
+    SDL_Rect btnPause;
 
     // ── Botões do fim de partida ──────────────────────────────────
     std::vector<ui::UIButton> outcomeButtons;
@@ -87,6 +90,11 @@ class SceneBattle : public GameWorld {
     size_t aiCardsToPlayIndex = 0;
     std::vector<DefenderAssignment> aiDefensePlan;
     size_t aiDefensePlanIndex = 0;
+
+    // ── Pausa ─────────────────────────────────────────────────────
+    // Enquanto existe, o menu de pausa fica com todo o input e o Update nao
+    // roda: o turno da IA e as compras iniciais param onde estavam.
+    std::unique_ptr<ScenePause> pauseMenu;
 
     // ── Declaração de defensores do jogador ───────────────────────
     Card *pendingDefender = nullptr; // criatura escolhida, esperando o atacante
@@ -151,6 +159,12 @@ class SceneBattle : public GameWorld {
     bool CanPlaySpell() const;
     bool IsPlayerInputBlocked() const;
     bool IsBattleOver() const { return outcome != BattleOutcome::ONGOING; }
+    bool IsPaused() const { return pauseMenu != nullptr; }
+
+    // ── Pausa ─────────────────────────────────────────────────────
+    void OpenPause();
+    void ClosePause();
+    bool HandlePauseInput(SDL_Event &e); // pode destruir a cena
 
     // ── Input ─────────────────────────────────────────────────────
     bool HandleNextPhaseClick(const SDL_Event &e);
@@ -181,6 +195,7 @@ class SceneBattle : public GameWorld {
 
     // ── Render ────────────────────────────────────────────────────
     void RenderButtons(SDL_Renderer *renderer) const;
+    void RenderPauseButton(SDL_Renderer *renderer) const;
     void RenderHand(SDL_Renderer *renderer) const;
     void RenderOpponentHand(SDL_Renderer *renderer) const;
     void RenderHUD(SDL_Renderer *renderer) const;

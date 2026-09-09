@@ -56,7 +56,7 @@ void SceneUI::HandleInput(SDL_Event &event) {
     // O callback pode ter trocado de cena: nada pode tocar em `this` aqui.
 }
 
-void SceneUI::Render(SDL_Renderer *renderer) {
+void SceneUI::RenderBackground(SDL_Renderer *renderer) {
     if (background) {
         SDL_Rect dst = {0, 0, screenWidth, screenHeight};
         SDL_RenderCopy(renderer, background, nullptr, &dst);
@@ -64,7 +64,10 @@ void SceneUI::Render(SDL_Renderer *renderer) {
         SDL_SetRenderDrawColor(renderer, 20, 20, 40, 255);
         SDL_RenderClear(renderer);
     }
+}
 
+void SceneUI::Render(SDL_Renderer *renderer) {
+    RenderBackground(renderer);
     RenderCenteredText(renderer, fontTitle, title, kTitleY, {255, 255, 255, 255});
     RenderContent(renderer);
     ui::RenderButtons(renderer, buttons, font, hoveredIndex);

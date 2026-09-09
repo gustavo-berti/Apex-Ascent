@@ -88,6 +88,7 @@ void SceneBattle::Initialize(SDL_Renderer *renderer) {
     constexpr int kOppHandHiddenPart = Board::kCardHeight / 3;
     opponentHandZone = {0, -kOppHandHiddenPart, kScreenW, Board::kCardHeight};
 
+    btnPause = {1420, 240, 150, 50};
     btnCancel = {1420, 300, 150, 50};
     btnNextPhase = {1420, 360, 150, 50};
 
@@ -636,6 +637,50 @@ void SceneBattle::SendDeadCardsToDiscard(const CombatResult &result) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+//  Pausa
+// ═══════════════════════════════════════════════════════════════════
+
+void SceneBattle::OpenPause() {
+    if (IsPaused()) return;
+
+    pauseMenu = std::make_unique<ScenePause>(gameManager, [this] { ClosePause(); });
+    pauseMenu->Initialize(gameManager.GetRenderer());
+    std::cout << "[PAUSA] Partida pausada." << std::endl;
+}
+
+void SceneBattle::ClosePause() {
+    if (!IsPaused()) return;
+
+    // O unique_ptr zera o membro antes de destruir a cena de pausa, entao dar
+    // reset de dentro do callback dela e seguro — o DispatchClick mantem uma
+    // copia do callback viva ate o fim da chamada.
+    pauseMenu.reset();
+    std::cout << "[PAUSA] Partida retomada." << std::endl;
+}
+
+// Pausar vale a qualquer momento, inclusive no meio do turno da IA: e o Update
+// que fica parado enquanto o menu existir.
+bool SceneBattle::HandlePauseInput(SDL_Event &e) {
+    const bool escape = e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE;
+
+    if (IsPaused()) {
+        if (escape)
+            ClosePause();
+        else
+            pauseMenu->HandleInput(e); // pode trocar de cena e destruir esta
+        return true;
+    }
+
+    const bool clickedPause = e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT &&
+                              GameManager::IsPointInsideRect(e.button.x, e.button.y, btnPause);
+
+    if (!escape && !clickedPause) return false;
+
+    OpenPause();
+    return true;
+}
+
+// ═══════════════════════════════════════════════════════════════════
 //  HandleInput
 // ═══════════════════════════════════════════════════════════════════
 
@@ -644,6 +689,7 @@ void SceneBattle::HandleInput(SDL_Event &event) {
         HandleOutcomeInput(event);
         return; // HandleOutcomeInput pode ter deletado esta cena
     }
+    if (HandlePauseInput(event)) return; // o menu de pausa pode ter deletado esta cena
     if (event.type != SDL_MOUSEBUTTONDOWN) return;
     if (IsPlayerInputBlocked()) return;
     if (summonPending.active) {
@@ -884,6 +930,10 @@ bool SceneBattle::HandleBattleCardClick(const SDL_Event &e) {
 // ═══════════════════════════════════════════════════════════════════
 
 void SceneBattle::Update(float dt) {
+    // Congela tudo: as compras iniciais e os passos da IA continuam de onde
+    // pararam quando a pausa sair.
+    if (IsPaused()) return;
+
     if (matchStartPending && hasRendered) {
         matchStartPending = false;
         StartMatchFlow();
@@ -926,7 +976,20 @@ void SceneBattle::Render(SDL_Renderer *renderer) {
     RenderHealthBars(renderer);
     RenderHUD(renderer);
     if (summonPending.active) RenderSummonPending(renderer);
-    if (IsBattleOver()) RenderOutcome(renderer);
+    if (IsBattleOver())
+        RenderOutcome(renderer);
+    else
+        RenderPauseButton(renderer);
+
+    if (IsPaused()) pauseMenu->Render(renderer);
+}
+
+// O botao fica por cima de tudo: pausar vale ate com o overlay do sacrificio
+// aberto.
+void SceneBattle::RenderPauseButton(SDL_Renderer *renderer) const {
+    ui::UIRenderUtils::RenderButton(renderer, btnPause, "Pausar", fontSmall, true,
+                                    {60, 60, 100, 255}, {100, 100, 180, 255},
+                                    {255, 255, 255, 255}, {255, 255, 255, 255});
 }
 
 void SceneBattle::RenderSummonPending(SDL_Renderer *renderer) const {
