@@ -149,6 +149,7 @@ class SceneBattle : public GameWorld {
     // ── Helpers de estado ─────────────────────────────────────────
     bool CanPlayCreature() const;
     bool CanPlaySpell() const;
+    bool IsPlayerInputBlocked() const;
     bool IsBattleOver() const { return outcome != BattleOutcome::ONGOING; }
 
     // ── Input ─────────────────────────────────────────────────────

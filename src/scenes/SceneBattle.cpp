@@ -535,6 +535,16 @@ bool SceneBattle::CanPlaySpell() const {
            s == CombatStep::DECLARE_ATTACKERS || s == CombatStep::DECLARE_DEFENDERS;
 }
 
+// Enquanto a cena esta no comando — compras iniciais, passos da IA (inclusive a
+// defesa dela, que roda no turno do jogador) e resolucao do combate — o jogador
+// nao pode clicar em nada. A unica acao dele fora do proprio turno e declarar
+// defensores contra o ataque da IA.
+bool SceneBattle::IsPlayerInputBlocked() const {
+    if (matchStartPending || scriptedState != ScriptedState::Idle) return true;
+    if (turnManager.GetCombatStep() == CombatStep::RESOLUTION) return true;
+    return !turnManager.IsPlayerTurn() && !IsPlayerDeclaringDefenders();
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  Combate
 // ═══════════════════════════════════════════════════════════════════
@@ -635,6 +645,7 @@ void SceneBattle::HandleInput(SDL_Event &event) {
         return; // HandleOutcomeInput pode ter deletado esta cena
     }
     if (event.type != SDL_MOUSEBUTTONDOWN) return;
+    if (IsPlayerInputBlocked()) return;
     if (summonPending.active) {
         HandleSummonPendingInput(event);
         return;
@@ -1004,7 +1015,7 @@ void SceneBattle::RenderOpponentHand(SDL_Renderer *renderer) const {
 void SceneBattle::RenderButtons(SDL_Renderer *renderer) const {
     if (IsBattleOver() || summonPending.active) return;
 
-    bool isPlayer = turnManager.IsPlayerTurn();
+    const bool canAct = !IsPlayerInputBlocked();
     const bool defending = IsPlayerDeclaringDefenders();
 
     const SDL_Color borderColor = {255, 255, 255, 255};
@@ -1016,9 +1027,9 @@ void SceneBattle::RenderButtons(SDL_Renderer *renderer) const {
     const bool confirmLabel = defending || (selectingAttackers && hasAttackers);
     const std::string nextPhaseLabel = confirmLabel ? "Confirmar" : "Próximo";
 
-    ui::UIRenderUtils::RenderButton(renderer, btnNextPhase, nextPhaseLabel, fontSmall,
-                                    isPlayer || defending, {220, 160, 0, 255}, {250, 200, 40, 255},
-                                    borderColor, textColor);
+    ui::UIRenderUtils::RenderButton(renderer, btnNextPhase, nextPhaseLabel, fontSmall, canAct,
+                                    {220, 160, 0, 255}, {250, 200, 40, 255}, borderColor,
+                                    textColor);
 
     if (selectingAttackers && hasAttackers)
         ui::UIRenderUtils::RenderButton(renderer, btnCancel, "Cancelar", fontSmall, true,
