@@ -13,6 +13,7 @@ SOURCES = ./src/main.cpp ./src/core/GameManager.cpp \
           ./src/objects/cards/SpellCard.cpp \
           ./src/objects/ui/UIRenderUtils.cpp ./src/objects/ui/UIButton.cpp \
           ./libs/my-lib/src/memory-pool.cpp ./src/core/data/CardDatabase.cpp \
+          ./src/core/data/ScoreBoard.cpp \
           ./src/core/parsers/CardParser.cpp ./src/core/enums/EnumConverter.cpp \
           ./src/logic/CardFactory.cpp ./src/scenes/SceneBattle.cpp \
           ./src/logic/Board.cpp ./src/scenes/SceneUI.cpp ./src/scenes/SceneMenu.cpp \

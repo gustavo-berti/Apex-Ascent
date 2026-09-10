@@ -1,6 +1,7 @@
 #pragma once
 #include "../core/GameWorld.hpp"
 #include "../core/data/CardDatabase.hpp"
+#include "../core/data/ScoreBoard.hpp"
 #include "../logic/Board.hpp"
 #include "../logic/Opponent.hpp"
 #include "../logic/Player.hpp"
@@ -80,6 +81,8 @@ class SceneBattle : public GameWorld {
     BattleOutcome outcome = BattleOutcome::ONGOING;
     bool hasRendered = false;
     bool matchStartPending = false;
+    int runScore = 0;     // fechado no fim da partida, mostrado na tela de fim
+    int runCardsLeft = 0; // cartas que sobraram com o jogador
 
     // ── Passos pausados (compras iniciais + turno da IA) ────────────
     ScriptedState scriptedState = ScriptedState::Idle;
@@ -146,6 +149,10 @@ class SceneBattle : public GameWorld {
     void HandleCancelAttack();
     void HandleConfirmAttack();
     void CheckBattleOutcome(const CombatResult &result);
+
+    // ── Pontuação da run ──────────────────────────────────────────
+    void FinishRun(); // fecha a pontuacao e grava no placar
+    int CountPlayerCardsLeft() const;
 
     // ── Defesa ────────────────────────────────────────────────────
     void BeginDefenderDeclaration();

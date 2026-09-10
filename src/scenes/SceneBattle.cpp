@@ -188,13 +188,57 @@ void SceneBattle::CheckBattleOutcome(const CombatResult &result) {
     if (opponent->IsDefeated()) {
         outcome = BattleOutcome::PLAYER_WIN;
         std::cout << "=== JOGADOR VENCEU! ===" << std::endl;
+    } else if (currentState->IsDefeated()) {
+        outcome = BattleOutcome::PLAYER_LOSE;
+        std::cout << "=== JOGADOR PERDEU! ===" << std::endl;
+    } else {
         return;
     }
 
-    if (currentState->IsDefeated()) {
-        outcome = BattleOutcome::PLAYER_LOSE;
-        std::cout << "=== JOGADOR PERDEU! ===" << std::endl;
+    FinishRun();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  Pontuação da run
+// ═══════════════════════════════════════════════════════════════════
+
+// Cartas restantes = tudo que ainda esta com o jogador (baralho, mao e campo).
+// O cemiterio nao conta: perder criatura custa pontos.
+int SceneBattle::CountPlayerCardsLeft() const {
+    return static_cast<int>(playerPiles.drawPile.size() + playerPiles.hand.size() +
+                            board.GetPlayerPreparationCards().size() +
+                            board.GetPlayerBattleCards().size());
+}
+
+void SceneBattle::FinishRun() {
+    // A dificuldade e o nivel do oponente escolhido no menu (Opponent::deckPart).
+    const int difficulty = std::max(1, opponent->deckPart);
+    const int health = std::max(0, currentState->currentHealth);
+
+    runCardsLeft = CountPlayerCardsLeft();
+    runScore = ScoreBoard::ComputeScore(runCardsLeft, health, difficulty);
+
+    std::cout << "[PONTUACAO] (" << runCardsLeft << " cartas + " << health << " vida) x "
+              << difficulty << " = " << runScore << std::endl;
+
+    ScoreEntry entry;
+    entry.score = runScore;
+    entry.opponentRace = opponent->deckType;
+    entry.difficulty = difficulty;
+    entry.health = health;
+    entry.cardsLeft = runCardsLeft;
+
+    ScoreBoard scores;
+    scores.Load();
+    const int position = scores.Add(entry);
+
+    if (position < 0) {
+        std::cout << "[PONTUACAO] Fora do top " << ScoreBoard::kMaxEntries << "." << std::endl;
+        return;
     }
+
+    std::cout << "[PONTUACAO] Entrou no placar em " << (position + 1) << "o lugar." << std::endl;
+    scores.Save();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1264,12 +1308,32 @@ void SceneBattle::RenderOutcome(SDL_Renderer *renderer) const {
     SDL_Color color = (outcome == BattleOutcome::PLAYER_WIN) ? SDL_Color{30, 255, 60, 255}
                                                              : SDL_Color{255, 50, 50, 255};
 
+    const int buttonsY = outcomeButtons.front().rect.y;
+
     int textW = 0;
     int textH = 0;
     TTF_SizeUTF8(font, text, &textW, &textH);
     const int textX = (1600 - textW) / 2;
-    const int textY = outcomeButtons.front().rect.y - 60 - textH;
-    ui::UIRenderUtils::RenderText(renderer, text, textX, textY, color, font);
+    ui::UIRenderUtils::RenderText(renderer, text, textX, buttonsY - 110 - textH, color, font);
+
+    if (fontSmall) {
+        auto centered = [&](const std::string &line, int y, SDL_Color lineColor) {
+            int lineW = 0;
+            int lineH = 0;
+            TTF_SizeUTF8(fontSmall, line.c_str(), &lineW, &lineH);
+            ui::UIRenderUtils::RenderText(renderer, line, (1600 - lineW) / 2, y, lineColor,
+                                          fontSmall);
+        };
+
+        const int difficulty = std::max(1, opponent->deckPart);
+        const std::string breakdown = "(" + std::to_string(runCardsLeft) + " cartas + " +
+                                      std::to_string(std::max(0, currentState->currentHealth)) +
+                                      " vida) x " + std::to_string(difficulty) + " de dificuldade";
+
+        centered("Pontuação: " + std::to_string(runScore), buttonsY - 95,
+                 SDL_Color{255, 220, 80, 255});
+        centered(breakdown, buttonsY - 55, SDL_Color{220, 220, 220, 255});
+    }
 
     ui::RenderButtons(renderer, outcomeButtons, fontSmall, outcomeHoveredIndex);
 }

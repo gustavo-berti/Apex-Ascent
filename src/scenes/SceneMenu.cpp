@@ -1,5 +1,6 @@
 #include "SceneMenu.hpp"
 #include "../core/GameManager.hpp"
+#include "../objects/ui/UIRenderUtils.hpp"
 #include "SceneBattle.hpp"
 #include <iostream>
 
@@ -15,12 +16,13 @@ void SceneMenu::Initialize(SDL_Renderer *renderer) {
 // ── Tela principal ────────────────────────────────────────────────
 
 void SceneMenu::ShowMainScreen() {
-    showingOpponentSetup = false;
+    screen = Screen::MAIN;
+    title = "Apex Ascent";
     hoveredIndex = -1;
     buttons.clear();
 
     const int btnW = 200, btnH = 50, gap = 30, margin = 40;
-    const int stackHeight = btnH * 3 + gap * 2;
+    const int stackHeight = btnH * 4 + gap * 3;
     const int x = screenWidth - margin - btnW;
     const int y = screenHeight - margin - stackHeight;
 
@@ -32,7 +34,10 @@ void SceneMenu::ShowMainScreen() {
     buttons.push_back({{x, y + gap + btnH, btnW, btnH}, "Coleção",
                        [] { std::cout << "Coleção clicado" << std::endl; }});
 
-    buttons.push_back({{x, y + (gap + btnH) * 2, btnW, btnH}, "Sair", [] {
+    buttons.push_back({{x, y + (gap + btnH) * 2, btnW, btnH}, "Pontuações",
+                       [this] { ShowScores(); }});
+
+    buttons.push_back({{x, y + (gap + btnH) * 3, btnW, btnH}, "Sair", [] {
                            std::cout << "Sair clicado" << std::endl;
                            SDL_Event quit;
                            quit.type = SDL_QUIT;
@@ -44,7 +49,7 @@ void SceneMenu::ShowMainScreen() {
 // Duas fileiras centralizadas (raça e nivel) e as ações embaixo.
 
 void SceneMenu::ShowOpponentSetup() {
-    showingOpponentSetup = true;
+    screen = Screen::OPPONENT_SETUP;
     hoveredIndex = -1;
     buttons.clear();
 
@@ -99,6 +104,24 @@ void SceneMenu::SelectLevel(int level) {
             i + 1 == level ? ui::styles::kSelected : ui::styles::kDefault;
 }
 
+// ── Placar ────────────────────────────────────────────────────────
+
+void SceneMenu::ShowScores() {
+    screen = Screen::SCORES;
+    title = "Melhores Pontuações";
+    hoveredIndex = -1;
+    buttons.clear();
+
+    // Le do disco na hora: a partida que acabou de terminar ja esta no arquivo.
+    scores.Load();
+    std::cout << "[MENU] Placar com " << scores.GetEntries().size() << " pontuação(oes)."
+              << std::endl;
+
+    const int btnW = 200, btnH = 50;
+    buttons.push_back({{(screenWidth - btnW) / 2, screenHeight - 110, btnW, btnH}, "Voltar",
+                       [this] { ShowMainScreen(); }});
+}
+
 void SceneMenu::StartOpponentBattle() {
     // A escolha vira deckType/deckPart antes do SceneBattle montar o baralho.
     gameManager.SetOpponentDeck(selectedRace, selectedLevel);
@@ -116,9 +139,57 @@ void SceneMenu::StartOpponentBattle() {
 // ── Render ────────────────────────────────────────────────────────
 
 void SceneMenu::RenderContent(SDL_Renderer *renderer) {
-    if (!showingOpponentSetup) return;
+    if (screen == Screen::SCORES) {
+        RenderScoreTable(renderer);
+        return;
+    }
+
+    if (screen != Screen::OPPONENT_SETUP) return;
 
     const SDL_Color white = {255, 255, 255, 255};
     RenderCenteredText(renderer, font, "Raça do oponente", buttons[0].rect.y - 40, white);
     RenderCenteredText(renderer, font, "Nível do oponente", buttons[kRaceCount].rect.y - 40, white);
+}
+
+// Sem nome de jogador: cada linha e identificada pela run — contra que raça
+// foi, em que dificuldade, e como ela acabou (vida e cartas restantes).
+void SceneMenu::RenderScoreTable(SDL_Renderer *renderer) const {
+    const SDL_Color white = {255, 255, 255, 255};
+    const auto &entries = scores.GetEntries();
+
+    // Painel escuro: o fundo do menu deixaria a tabela ilegivel.
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 170);
+    SDL_Rect panel = {340, 150, 940, 530};
+    SDL_RenderFillRect(renderer, &panel);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+    SDL_SetRenderDrawColor(renderer, 180, 180, 255, 255);
+    SDL_RenderDrawRect(renderer, &panel);
+
+    if (entries.empty()) {
+        RenderCenteredText(renderer, font, "Nenhuma partida registrada ainda.", 380, white);
+        return;
+    }
+
+    constexpr int kColX[] = {380, 470, 650, 870, 1070, 1180};
+    constexpr const char *kColLabel[] = {"#", "Pontos", "Raça", "Dificuldade", "Vida", "Cartas"};
+    constexpr int kColCount = 6;
+    constexpr int kRowHeight = 44;
+    constexpr int kTableY = 175;
+
+    for (int col = 0; col < kColCount; ++col)
+        ui::UIRenderUtils::RenderText(renderer, kColLabel[col], kColX[col], kTableY,
+                                      {255, 220, 80, 255}, font);
+
+    for (int row = 0; row < static_cast<int>(entries.size()); ++row) {
+        const ScoreEntry &entry = entries[row];
+        const std::string cells[kColCount] = {
+            std::to_string(row + 1) + "o",         std::to_string(entry.score),
+            translateRace(entry.opponentRace),     std::to_string(entry.difficulty),
+            std::to_string(entry.health),          std::to_string(entry.cardsLeft)};
+
+        const int y = kTableY + (row + 1) * kRowHeight;
+        for (int col = 0; col < kColCount; ++col)
+            ui::UIRenderUtils::RenderText(renderer, cells[col], kColX[col], y, white, font);
+    }
 }

@@ -1,11 +1,14 @@
 #pragma once
+#include "../core/data/ScoreBoard.hpp"
 #include "../objects/cards/types/CardTypes.hpp"
 #include "SceneUI.hpp"
 
-// Menu principal e a tela de escolha do oponente, que aparece depois do
-// "Começar Jogo". As duas telas sao a mesma cena: mudam so os botoes.
+// Menu principal, a tela de escolha do oponente (depois do "Começar Jogo") e o
+// placar das melhores pontuacoes. As tres sao a mesma cena: mudam so os botoes.
 class SceneMenu : public SceneUI {
   private:
+    enum class Screen { MAIN, OPPONENT_SETUP, SCORES };
+
     static constexpr int kRaceCount = 5;
     static constexpr int kLevelCount = 5;
 
@@ -17,13 +20,16 @@ class SceneMenu : public SceneUI {
     Race selectedRace = Race::PIXIE;
     int selectedLevel = 1;
 
-    bool showingOpponentSetup = false;
+    Screen screen = Screen::MAIN;
+    ScoreBoard scores; // recarregado a cada vez que o placar abre
 
     void ShowMainScreen();
     void ShowOpponentSetup(); // botoes: [0..4] raças, [5..9] niveis, Lutar, Voltar
+    void ShowScores();
     void SelectRace(Race race);
     void SelectLevel(int level);
     void StartOpponentBattle(); // destroi a cena: nada pode rodar depois
+    void RenderScoreTable(SDL_Renderer *renderer) const;
 
   protected:
     void RenderContent(SDL_Renderer *renderer) override;
