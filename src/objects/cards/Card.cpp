@@ -22,8 +22,9 @@ Color Card::GetRarityColor() const {
     return Color(100, 100, 100, 255);
 }
 
-Card::Card(std::string name, int manaCost, Rarity rarity, std::string imagePath, float x, float y)
-    : DynamicObject(x, y, 100, 140), name(name), manaCost(manaCost), rarity(rarity),
+Card::Card(int id, std::string name, int manaCost, Rarity rarity, std::string imagePath, float x,
+          float y)
+    : DynamicObject(x, y, 100, 140), id(id), name(name), manaCost(manaCost), rarity(rarity),
       imagePath(imagePath) {}
 
 Card::~Card() {

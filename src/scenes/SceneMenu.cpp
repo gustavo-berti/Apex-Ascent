@@ -1,5 +1,7 @@
 #include "SceneMenu.hpp"
 #include "../core/GameManager.hpp"
+#include "../core/data/CardDatabase.hpp"
+#include "../logic/DeckBuilder.hpp"
 #include "../objects/ui/UIRenderUtils.hpp"
 #include "../scenes/SceneBattle.hpp"
 #include "../scenes/SceneCollection.hpp"
@@ -64,6 +66,16 @@ void SceneMenu::HandleInput(SDL_Event &event) {
     }
 
     if (IsButtonClicked(buttons[0], event)) {
+        // A selecao feita na Colecao (GameManager::playerDeckSelection) prevalece;
+        // o que faltar pra fechar 30 cartas (parcial ou totalmente) e sorteado aqui.
+        CardDatabase database;
+        if (database.LoadFromJson("assets/data/cards.json")) {
+            gameManager.GetPlayer().masterDeck =
+                DeckBuilder::Build(gameManager.GetPlayerDeckSelection(), database);
+        } else {
+            std::cerr << "Falha ao carregar cards.json para montar o deck." << std::endl;
+        }
+
         SceneBattle *battle = new SceneBattle();
         battle->Initialize(gameManager.GetRenderer());
         battle->StartBattle(&gameManager.GetPlayer(), &gameManager.GetOpponent(),
