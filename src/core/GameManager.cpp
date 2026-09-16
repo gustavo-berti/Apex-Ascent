@@ -113,13 +113,14 @@ void GameManager::HandleEvents() {
                 ToggleFullscreen();
             }
 
+            // Em tela cheia o ESC volta pra janela; fora dela o ESC e da cena
+            // (na batalha ele abre e fecha o menu de pausa).
             if (event.key.keysym.sym == SDLK_ESCAPE) {
                 Uint32 flags = SDL_GetWindowFlags(window);
 
                 if (flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
                     ToggleFullscreen();
-                } else {
-                    isRunning = false;
+                    continue;
                 }
             }
             break;

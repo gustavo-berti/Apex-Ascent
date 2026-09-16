@@ -1,5 +1,6 @@
 #include "SceneBattle.hpp"
 #include "../core/GameManager.hpp"
+#include "SceneMenu.hpp"
 #include "../logic/CardFactory.hpp"
 #include "../objects/cards/SpellCard.hpp"
 #include "../objects/ui/UIRenderUtils.hpp"
@@ -12,21 +13,20 @@
 //  Construtor / Destrutor
 // ═══════════════════════════════════════════════════════════════════
 
-SceneBattle::SceneBattle() : board(turnManager), draggedCard(nullptr) {}
+SceneBattle::SceneBattle(GameManager &manager)
+    : board(turnManager), gameManager(manager), draggedCard(nullptr) {}
 
 SceneBattle::~SceneBattle() {
     if (background) {
         SDL_DestroyTexture(background);
         background = nullptr;
     }
-    if (font) {
-        TTF_CloseFont(font);
-        font = nullptr;
+    if (cardBack) {
+        SDL_DestroyTexture(cardBack);
+        cardBack = nullptr;
     }
-    if (fontSmall) {
-        TTF_CloseFont(fontSmall);
-        fontSmall = nullptr;
-    }
+    // As fontes pertencem ao cache do UIRenderUtils e sobrevivem a cena:
+    // fecha-las aqui deixaria o ponteiro do cache pendurado.
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -41,6 +41,13 @@ void SceneBattle::Initialize(SDL_Renderer *renderer) {
     } else {
         background = SDL_CreateTextureFromSurface(renderer, surface);
         SDL_FreeSurface(surface);
+    }
+
+    if (SDL_Surface *backSurface = IMG_Load("assets/images/cards/card_back.png")) {
+        cardBack = SDL_CreateTextureFromSurface(renderer, backSurface);
+        SDL_FreeSurface(backSurface);
+    } else {
+        std::cerr << "Erro ao carregar o verso da carta: " << IMG_GetError() << std::endl;
     }
 
     if (!cardDatabase.LoadFromJson("assets/data/cards.json"))
@@ -76,8 +83,16 @@ void SceneBattle::Initialize(SDL_Renderer *renderer) {
     playerPreparationZone = {boardX, playerBattleZone.y + zoneH + kZoneGap, boardWidth, zoneH};
     playerHandZone = {0, handY, kScreenW, kHandH};
 
+    // A mao do oponente fica pendurada na borda de cima: carta em tamanho
+    // normal, com 1/3 dela para fora da tela.
+    constexpr int kOppHandHiddenPart = Board::kCardHeight / 3;
+    opponentHandZone = {0, -kOppHandHiddenPart, kScreenW, Board::kCardHeight};
+
+    btnPause = {1420, 240, 150, 50};
     btnCancel = {1420, 300, 150, 50};
     btnNextPhase = {1420, 360, 150, 50};
+
+    BuildOutcomeButtons();
 
     board.SetZoneRects(playerPreparationZone, playerBattleZone, enemyPreparationZone,
                        enemyBattleZone);
@@ -99,7 +114,8 @@ void SceneBattle::StartBattle(Player *playerState, Opponent *opp, SDL_Renderer *
     this->renderer = sdlRenderer;
     outcome = BattleOutcome::ONGOING;
     summonPending.Clear();
-    opponent->SetDeck(Race::PIXIE, 1);
+    // A raça e o nivel do oponente vem do menu (GameManager::SetOpponentDeck),
+    // entao o baralho ja esta montado aqui.
     ResetBattleState();
 
     matchStartPending = true;
@@ -172,13 +188,57 @@ void SceneBattle::CheckBattleOutcome(const CombatResult &result) {
     if (opponent->IsDefeated()) {
         outcome = BattleOutcome::PLAYER_WIN;
         std::cout << "=== JOGADOR VENCEU! ===" << std::endl;
+    } else if (currentState->IsDefeated()) {
+        outcome = BattleOutcome::PLAYER_LOSE;
+        std::cout << "=== JOGADOR PERDEU! ===" << std::endl;
+    } else {
         return;
     }
 
-    if (currentState->IsDefeated()) {
-        outcome = BattleOutcome::PLAYER_LOSE;
-        std::cout << "=== JOGADOR PERDEU! ===" << std::endl;
+    FinishRun();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  Pontuação da run
+// ═══════════════════════════════════════════════════════════════════
+
+// Cartas restantes = tudo que ainda esta com o jogador (baralho, mao e campo).
+// O cemiterio nao conta: perder criatura custa pontos.
+int SceneBattle::CountPlayerCardsLeft() const {
+    return static_cast<int>(playerPiles.drawPile.size() + playerPiles.hand.size() +
+                            board.GetPlayerPreparationCards().size() +
+                            board.GetPlayerBattleCards().size());
+}
+
+void SceneBattle::FinishRun() {
+    // A dificuldade e o nivel do oponente escolhido no menu (Opponent::deckPart).
+    const int difficulty = std::max(1, opponent->deckPart);
+    const int health = std::max(0, currentState->currentHealth);
+
+    runCardsLeft = CountPlayerCardsLeft();
+    runScore = ScoreBoard::ComputeScore(runCardsLeft, health, difficulty);
+
+    std::cout << "[PONTUACAO] (" << runCardsLeft << " cartas + " << health << " vida) x "
+              << difficulty << " = " << runScore << std::endl;
+
+    ScoreEntry entry;
+    entry.score = runScore;
+    entry.opponentRace = opponent->deckType;
+    entry.difficulty = difficulty;
+    entry.health = health;
+    entry.cardsLeft = runCardsLeft;
+
+    ScoreBoard scores;
+    scores.Load();
+    const int position = scores.Add(entry);
+
+    if (position < 0) {
+        std::cout << "[PONTUACAO] Fora do top " << ScoreBoard::kMaxEntries << "." << std::endl;
+        return;
     }
+
+    std::cout << "[PONTUACAO] Entrou no placar em " << (position + 1) << "o lugar." << std::endl;
+    scores.Save();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -245,6 +305,7 @@ void SceneBattle::RunAISummonStep() {
 
         auto &hand = opponentPiles.hand;
         hand.erase(std::remove(hand.begin(), hand.end(), card), hand.end());
+        RearrangeOpponentHand();
 
         std::cout << "[IA] >>> INVOCOU: " << card->GetName() << " (Visível no campo!)" << std::endl;
     }
@@ -490,6 +551,17 @@ void SceneBattle::RearrangeHand() {
         playerPiles.hand[i]->SetPosition(startX + i * (Board::kCardWidth + Board::kCardGap), y);
 }
 
+void SceneBattle::RearrangeOpponentHand() {
+    const int n = static_cast<int>(opponentPiles.hand.size());
+    if (n == 0) return;
+
+    const int totalW = n * Board::kCardWidth + (n - 1) * Board::kCardGap;
+    const int startX = opponentHandZone.x + (opponentHandZone.w - totalW) / 2;
+    const int y = opponentHandZone.y;
+    for (int i = 0; i < n; ++i)
+        opponentPiles.hand[i]->SetPosition(startX + i * (Board::kCardWidth + Board::kCardGap), y);
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  Helpers de estado
 // ═══════════════════════════════════════════════════════════════════
@@ -506,6 +578,16 @@ bool SceneBattle::CanPlaySpell() const {
     auto s = turnManager.GetCombatStep();
     return p == BattlePhase::MAIN || p == BattlePhase::SECOND_MAIN ||
            s == CombatStep::DECLARE_ATTACKERS || s == CombatStep::DECLARE_DEFENDERS;
+}
+
+// Enquanto a cena esta no comando — compras iniciais, passos da IA (inclusive a
+// defesa dela, que roda no turno do jogador) e resolucao do combate — o jogador
+// nao pode clicar em nada. A unica acao dele fora do proprio turno e declarar
+// defensores contra o ataque da IA.
+bool SceneBattle::IsPlayerInputBlocked() const {
+    if (matchStartPending || scriptedState != ScriptedState::Idle) return true;
+    if (turnManager.GetCombatStep() == CombatStep::RESOLUTION) return true;
+    return !turnManager.IsPlayerTurn() && !IsPlayerDeclaringDefenders();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -599,12 +681,61 @@ void SceneBattle::SendDeadCardsToDiscard(const CombatResult &result) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+//  Pausa
+// ═══════════════════════════════════════════════════════════════════
+
+void SceneBattle::OpenPause() {
+    if (IsPaused()) return;
+
+    pauseMenu = std::make_unique<ScenePause>(gameManager, [this] { ClosePause(); });
+    pauseMenu->Initialize(gameManager.GetRenderer());
+    std::cout << "[PAUSA] Partida pausada." << std::endl;
+}
+
+void SceneBattle::ClosePause() {
+    if (!IsPaused()) return;
+
+    // O unique_ptr zera o membro antes de destruir a cena de pausa, entao dar
+    // reset de dentro do callback dela e seguro — o DispatchClick mantem uma
+    // copia do callback viva ate o fim da chamada.
+    pauseMenu.reset();
+    std::cout << "[PAUSA] Partida retomada." << std::endl;
+}
+
+// Pausar vale a qualquer momento, inclusive no meio do turno da IA: e o Update
+// que fica parado enquanto o menu existir.
+bool SceneBattle::HandlePauseInput(SDL_Event &e) {
+    const bool escape = e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE;
+
+    if (IsPaused()) {
+        if (escape)
+            ClosePause();
+        else
+            pauseMenu->HandleInput(e); // pode trocar de cena e destruir esta
+        return true;
+    }
+
+    const bool clickedPause = e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT &&
+                              GameManager::IsPointInsideRect(e.button.x, e.button.y, btnPause);
+
+    if (!escape && !clickedPause) return false;
+
+    OpenPause();
+    return true;
+}
+
+// ═══════════════════════════════════════════════════════════════════
 //  HandleInput
 // ═══════════════════════════════════════════════════════════════════
 
 void SceneBattle::HandleInput(SDL_Event &event) {
-    if (IsBattleOver()) return;
+    if (IsBattleOver()) {
+        HandleOutcomeInput(event);
+        return; // HandleOutcomeInput pode ter deletado esta cena
+    }
+    if (HandlePauseInput(event)) return; // o menu de pausa pode ter deletado esta cena
     if (event.type != SDL_MOUSEBUTTONDOWN) return;
+    if (IsPlayerInputBlocked()) return;
     if (summonPending.active) {
         HandleSummonPendingInput(event);
         return;
@@ -620,6 +751,58 @@ void SceneBattle::HandleInput(SDL_Event &event) {
     if (!turnManager.IsPlayerTurn()) return;
     if (HandleBattleCardClick(event)) return;
     HandleHandCardClick(event);
+}
+
+// ── Input do fim de partida ───────────────────────────────────────
+
+// Os dois botoes ficam centralizados, logo abaixo do texto de vitoria/derrota.
+void SceneBattle::BuildOutcomeButtons() {
+    constexpr int btnW = 300;
+    constexpr int btnH = 60;
+    constexpr int btnGap = 40;
+    constexpr int rowX = (1600 - (2 * btnW + btnGap)) / 2;
+    constexpr int rowY = 900 / 2 + 90;
+
+    outcomeButtons.clear();
+    outcomeButtons.push_back({{rowX, rowY, btnW, btnH},
+                              "Tentar novamente",
+                              [this] { RestartBattle(); },
+                              ui::styles::kPrimary});
+    outcomeButtons.push_back({{rowX + btnW + btnGap, rowY, btnW, btnH},
+                              "Voltar ao menu",
+                              [this] { ReturnToMenu(); },
+                              ui::styles::kSecondary});
+}
+
+void SceneBattle::HandleOutcomeInput(const SDL_Event &e) {
+    if (e.type == SDL_MOUSEMOTION) {
+        outcomeHoveredIndex = ui::FindButtonAt(outcomeButtons, e.motion.x, e.motion.y);
+        return;
+    }
+
+    if (e.type != SDL_MOUSEBUTTONDOWN || e.button.button != SDL_BUTTON_LEFT) return;
+
+    ui::DispatchClick(outcomeButtons, e.button.x, e.button.y);
+    // O callback troca de cena e deleta esta: nada pode tocar em `this` aqui.
+}
+
+void SceneBattle::RestartBattle() {
+    std::cout << "[FIM] Reiniciando a partida contra o mesmo oponente." << std::endl;
+
+    SceneBattle *battle = new SceneBattle(gameManager);
+    battle->Initialize(gameManager.GetRenderer());
+    battle->StartBattle(&gameManager.GetPlayer(), &gameManager.GetOpponent(),
+                        gameManager.GetRenderer());
+    gameManager.ChangeScene(battle);
+}
+
+void SceneBattle::ReturnToMenu() {
+    std::cout << "[FIM] Voltando ao menu." << std::endl;
+
+    SceneMenu *menu = new SceneMenu(gameManager);
+    menu->Initialize(gameManager.GetRenderer());
+    gameManager.ChangeMusic("assets/audio/music/menu_theme.mp3");
+    gameManager.ChangeScene(menu);
 }
 
 // ── Input da declaração de defensores ─────────────────────────────
@@ -791,12 +974,16 @@ bool SceneBattle::HandleBattleCardClick(const SDL_Event &e) {
 // ═══════════════════════════════════════════════════════════════════
 
 void SceneBattle::Update(float dt) {
+    // Congela tudo: as compras iniciais e os passos da IA continuam de onde
+    // pararam quando a pausa sair.
+    if (IsPaused()) return;
+
     if (matchStartPending && hasRendered) {
         matchStartPending = false;
         StartMatchFlow();
     }
 
-    if (scriptedState != ScriptedState::Idle) {
+    if (scriptedState != ScriptedState::Idle && !IsBattleOver()) {
         scriptedTimer += dt;
         if (scriptedTimer >= kScriptedDelay) {
             scriptedTimer = 0.f;
@@ -827,12 +1014,26 @@ void SceneBattle::Render(SDL_Renderer *renderer) {
     board.Render(renderer);
     RenderDefensePhase(renderer);
     RenderHand(renderer);
+    RenderOpponentHand(renderer);
     RenderButtons(renderer);
     RenderMana(renderer);
     RenderHealthBars(renderer);
     RenderHUD(renderer);
     if (summonPending.active) RenderSummonPending(renderer);
-    if (IsBattleOver()) RenderOutcome(renderer);
+    if (IsBattleOver())
+        RenderOutcome(renderer);
+    else
+        RenderPauseButton(renderer);
+
+    if (IsPaused()) pauseMenu->Render(renderer);
+}
+
+// O botao fica por cima de tudo: pausar vale ate com o overlay do sacrificio
+// aberto.
+void SceneBattle::RenderPauseButton(SDL_Renderer *renderer) const {
+    ui::UIRenderUtils::RenderButton(renderer, btnPause, "Pausar", fontSmall, true,
+                                    {60, 60, 100, 255}, {100, 100, 180, 255},
+                                    {255, 255, 255, 255}, {255, 255, 255, 255});
 }
 
 void SceneBattle::RenderSummonPending(SDL_Renderer *renderer) const {
@@ -899,10 +1100,29 @@ void SceneBattle::RenderHand(SDL_Renderer *renderer) const {
         c->Render(renderer);
 }
 
+// Card::Render mostraria a arte, a mana e a raridade — a mao do oponente
+// desenha so o verso, na posicao que o RearrangeOpponentHand definiu.
+void SceneBattle::RenderOpponentHand(SDL_Renderer *renderer) const {
+    for (const Card *card : opponentPiles.hand) {
+        if (!card) continue;
+        SDL_Rect dst = {card->GetX(), card->GetY(), Board::kCardWidth, Board::kCardHeight};
+
+        if (cardBack) {
+            // Invertida: a mao do oponente e vista de cabeca pra baixo
+            SDL_RenderCopyEx(renderer, cardBack, nullptr, &dst, 0.0, nullptr, SDL_FLIP_VERTICAL);
+        } else {
+            SDL_SetRenderDrawColor(renderer, 60, 40, 90, 255);
+            SDL_RenderFillRect(renderer, &dst);
+            SDL_SetRenderDrawColor(renderer, 200, 200, 220, 255);
+            SDL_RenderDrawRect(renderer, &dst);
+        }
+    }
+}
+
 void SceneBattle::RenderButtons(SDL_Renderer *renderer) const {
     if (IsBattleOver() || summonPending.active) return;
 
-    bool isPlayer = turnManager.IsPlayerTurn();
+    const bool canAct = !IsPlayerInputBlocked();
     const bool defending = IsPlayerDeclaringDefenders();
 
     const SDL_Color borderColor = {255, 255, 255, 255};
@@ -914,9 +1134,9 @@ void SceneBattle::RenderButtons(SDL_Renderer *renderer) const {
     const bool confirmLabel = defending || (selectingAttackers && hasAttackers);
     const std::string nextPhaseLabel = confirmLabel ? "Confirmar" : "Próximo";
 
-    ui::UIRenderUtils::RenderButton(renderer, btnNextPhase, nextPhaseLabel, fontSmall,
-                                    isPlayer || defending, {220, 160, 0, 255}, {250, 200, 40, 255},
-                                    borderColor, textColor);
+    ui::UIRenderUtils::RenderButton(renderer, btnNextPhase, nextPhaseLabel, fontSmall, canAct,
+                                    {220, 160, 0, 255}, {250, 200, 40, 255}, borderColor,
+                                    textColor);
 
     if (selectingAttackers && hasAttackers)
         ui::UIRenderUtils::RenderButton(renderer, btnCancel, "Cancelar", fontSmall, true,
@@ -1088,12 +1308,34 @@ void SceneBattle::RenderOutcome(SDL_Renderer *renderer) const {
     SDL_Color color = (outcome == BattleOutcome::PLAYER_WIN) ? SDL_Color{30, 255, 60, 255}
                                                              : SDL_Color{255, 50, 50, 255};
 
+    const int buttonsY = outcomeButtons.front().rect.y;
+
     int textW = 0;
     int textH = 0;
     TTF_SizeUTF8(font, text, &textW, &textH);
     const int textX = (1600 - textW) / 2;
-    const int textY = (900 - textH) / 2;
-    ui::UIRenderUtils::RenderText(renderer, text, textX, textY, color, font);
+    ui::UIRenderUtils::RenderText(renderer, text, textX, buttonsY - 110 - textH, color, font);
+
+    if (fontSmall) {
+        auto centered = [&](const std::string &line, int y, SDL_Color lineColor) {
+            int lineW = 0;
+            int lineH = 0;
+            TTF_SizeUTF8(fontSmall, line.c_str(), &lineW, &lineH);
+            ui::UIRenderUtils::RenderText(renderer, line, (1600 - lineW) / 2, y, lineColor,
+                                          fontSmall);
+        };
+
+        const int difficulty = std::max(1, opponent->deckPart);
+        const std::string breakdown = "(" + std::to_string(runCardsLeft) + " cartas + " +
+                                      std::to_string(std::max(0, currentState->currentHealth)) +
+                                      " vida) x " + std::to_string(difficulty) + " de dificuldade";
+
+        centered("Pontuação: " + std::to_string(runScore), buttonsY - 95,
+                 SDL_Color{255, 220, 80, 255});
+        centered(breakdown, buttonsY - 55, SDL_Color{220, 220, 220, 255});
+    }
+
+    ui::RenderButtons(renderer, outcomeButtons, fontSmall, outcomeHoveredIndex);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1190,5 +1432,8 @@ void SceneBattle::DrawCards(Entity *entity, int amount) {
         }
     }
 
-    if (entity == currentState) RearrangeHand();
+    if (entity == currentState)
+        RearrangeHand();
+    else
+        RearrangeOpponentHand();
 }
