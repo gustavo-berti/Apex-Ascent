@@ -9,6 +9,10 @@ EffectAction StringToEffectAction(const std::string &action);
 EffectTarget StringToEffectTarget(const std::string &target);
 EffectCondition StringToEffectCondition(const std::string &condition);
 Race StringToRace(const std::string &raceStr);
+
+// Chave usada nos arquivos de dados — e a mesma que StringToRace le de volta.
+// Para mostrar na tela use translateRace.
+std::string RaceToString(Race race);
 Rarity StringToRarity(const std::string &rarityType);
 CardType StringToCardType(const std::string &cardType);
 SpellSpeed StringToSpellType(const std::string &spellType);

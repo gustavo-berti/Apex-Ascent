@@ -27,6 +27,7 @@ inline std::string translateRace(Race r) {
     case Race::NONE:
         return "Nenhuma";
     }
+    return "Desconhecida";
 }
 
 inline std::string translateRarity(Rarity r) {
@@ -42,6 +43,7 @@ inline std::string translateRarity(Rarity r) {
     case Rarity::LEGENDARY:
         return "Lendária";
     }
+    return "Desconhecida";
 }
 
 inline std::string translateCardType(CardType ct) {
@@ -51,6 +53,7 @@ inline std::string translateCardType(CardType ct) {
     case CardType::SPELL:
         return "Feitiço";
     }
+    return "Desconhecido";
 }
 
 inline std::string translateSpellSpeed(SpellSpeed ss) {
@@ -60,6 +63,7 @@ inline std::string translateSpellSpeed(SpellSpeed ss) {
     case SpellSpeed::SLOW:
         return "Lenta";
     }
+    return "Desconhecida";
 }
 
 inline std::string translateAbility(Ability a) {
@@ -77,4 +81,5 @@ inline std::string translateAbility(Ability a) {
     case Ability::NONE:
         return "Nenhuma";
     }
+    return "Desconhecida";
 }
