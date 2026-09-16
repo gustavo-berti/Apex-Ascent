@@ -6,109 +6,195 @@
 #include <SDL2/SDL_ttf.h>
 #include <iostream>
 
-SceneMenu::SceneMenu(GameManager &gm) : gameManager(gm) {}
-
-SceneMenu::~SceneMenu() {
-    if (background) {
-        SDL_DestroyTexture(background);
-        background = nullptr;
-    }
-}
+SceneMenu::SceneMenu(GameManager &manager) : SceneUI(manager) {}
 
 void SceneMenu::Initialize(SDL_Renderer *renderer) {
-    SDL_Surface *surface = IMG_Load("assets/images/start_menu.png");
-    if (!surface) {
-        std::cerr << "Erro ao carregar fundo: " << IMG_GetError() << std::endl;
-    } else {
-        background = SDL_CreateTextureFromSurface(renderer, surface);
-        SDL_FreeSurface(surface);
-    }
-
-    int w, h;
-    SDL_RenderGetLogicalSize(renderer, &w, &h);
-    if (w == 0 || h == 0) SDL_GetRendererOutputSize(renderer, &w, &h);
-
-    int btnW = 200;
-    int btnH = 50;
-    int gap = 30;
-    int margin = 40;
-    int stackHeight = (btnH * 3) + (gap * 2);
-
-    int startX = w - margin - btnW;
-    int startY = h - margin - stackHeight;
-
-    buttons = {
-        {{startX, startY, btnW, btnH}, "Começar Jogo"},
-        {{startX, startY + gap + btnH, btnW, btnH}, "Coleção"},
-        {{startX, startY + (gap + btnH) * 2, btnW, btnH}, "Sair"},
-    };
-
-    font = ui::UIRenderUtils::LoadFont("assets/fonts/frozen.ttf", 24);
-    fontTitle = ui::UIRenderUtils::LoadFont("assets/fonts/frozen.ttf", 60);
+    SceneUI::Initialize(renderer);
+    LoadBackground(renderer, "assets/images/start_menu.png");
+    title = "Apex Ascent";
+    ShowMainScreen();
 }
 
-bool SceneMenu::IsButtonClicked(const MenuButton &btn, const SDL_Event &event) const {
-    if (event.type != SDL_MOUSEBUTTONDOWN || event.button.button != SDL_BUTTON_LEFT) return false;
-    return GameManager::IsPointInsideRect(event.button.x, event.button.y, btn.rect);
+// ── Tela principal ────────────────────────────────────────────────
+
+void SceneMenu::ShowMainScreen() {
+    screen = Screen::MAIN;
+    title = "Apex Ascent";
+    hoveredIndex = -1;
+    buttons.clear();
+
+    const int btnW = 200, btnH = 50, gap = 30, margin = 40;
+    const int stackHeight = btnH * 4 + gap * 3;
+    const int x = screenWidth - margin - btnW;
+    const int y = screenHeight - margin - stackHeight;
+
+    buttons.push_back({{x, y, btnW, btnH}, "Começar Jogo", [this] {
+                           std::cout << "[MENU] Escolha a raça e o nivel do oponente." << std::endl;
+                           ShowOpponentSetup();
+                       }});
+
+    buttons.push_back({{x, y + gap + btnH, btnW, btnH}, "Coleção", [] {
+                           std::cout << "Coleção clicado" << std::endl;
+                       }});
+
+    buttons.push_back(
+        {{x, y + (gap + btnH) * 2, btnW, btnH}, "Pontuações", [this] { ShowScores(); }});
+
+    buttons.push_back({{x, y + (gap + btnH) * 3, btnW, btnH}, "Sair", [] {
+                           std::cout << "Sair clicado" << std::endl;
+                           SDL_Event quit;
+                           quit.type = SDL_QUIT;
+                           SDL_PushEvent(&quit);
+                       }});
 }
 
-void SceneMenu::HandleInput(SDL_Event &event) {
-    if (event.type == SDL_MOUSEMOTION) {
-        hoveredIndex = -1;
-        for (int i = 0; i < (int)buttons.size(); i++) {
-            if (GameManager::IsPointInsideRect(event.motion.x, event.motion.y, buttons[i].rect)) {
-                hoveredIndex = i;
-                break;
-            }
-        }
+// ── Escolha do oponente ───────────────────────────────────────────
+// Duas fileiras centralizadas (raça e nivel) e as ações embaixo.
+
+void SceneMenu::ShowOpponentSetup() {
+    screen = Screen::OPPONENT_SETUP;
+    hoveredIndex = -1;
+    buttons.clear();
+
+    const int raceW = 210, raceH = 50, raceGap = 20;
+    const int raceRowW = kRaceCount * raceW + (kRaceCount - 1) * raceGap;
+    const int raceX = (screenWidth - raceRowW) / 2;
+    const int raceY = screenHeight / 2 - 150;
+
+    for (int i = 0; i < kRaceCount; ++i) {
+        const Race race = kRaces[i];
+        buttons.push_back({{raceX + i * (raceW + raceGap), raceY, raceW, raceH},
+                           translateRace(race),
+                           [this, race] { SelectRace(race); },
+                           race == selectedRace ? ui::styles::kSelected : ui::styles::kDefault});
     }
 
-    if (IsButtonClicked(buttons[0], event)) {
-        SceneBattle *battle = new SceneBattle();
-        battle->Initialize(gameManager.GetRenderer());
-        battle->StartBattle(&gameManager.GetPlayer(), &gameManager.GetOpponent(),
-                            gameManager.GetRenderer());
-        gameManager.ChangeMusic("assets/audio/music/battle_theme.mp3");
-        gameManager.ChangeScene(battle);
-    } else if (IsButtonClicked(buttons[1], event)) {
-        SceneCollection *collection = new SceneCollection(gameManager);
-        collection->Initialize(gameManager.GetRenderer());
-        gameManager.ChangeScene(collection);
-    } else if (IsButtonClicked(buttons[2], event)) {
-        std::cout << "Sair clicado" << std::endl;
-        SDL_Event quit;
-        quit.type = SDL_QUIT;
-        SDL_PushEvent(&quit);
+    const int lvlW = 100, lvlH = 50, lvlGap = 20;
+    const int lvlRowW = kLevelCount * lvlW + (kLevelCount - 1) * lvlGap;
+    const int lvlX = (screenWidth - lvlRowW) / 2;
+    const int lvlY = screenHeight / 2;
+
+    for (int i = 0; i < kLevelCount; ++i) {
+        const int level = i + 1;
+        buttons.push_back({{lvlX + i * (lvlW + lvlGap), lvlY, lvlW, lvlH},
+                           std::to_string(level),
+                           [this, level] { SelectLevel(level); },
+                           level == selectedLevel ? ui::styles::kSelected : ui::styles::kDefault});
     }
+
+    const int actW = 200, actH = 50, actGap = 40;
+    const int actY = screenHeight / 2 + 150;
+    buttons.push_back({{screenWidth / 2 - actW - actGap / 2, actY, actW, actH}, "Lutar", [this] {
+                           StartOpponentBattle();
+                       }});
+    buttons.push_back(
+        {{screenWidth / 2 + actGap / 2, actY, actW, actH}, "Voltar", [this] { ShowMainScreen(); }});
 }
 
-void SceneMenu::Update(float dt) {}
+void SceneMenu::SelectRace(Race race) {
+    selectedRace = race;
+    std::cout << "[MENU] Raça do oponente: " << translateRace(race) << std::endl;
 
-void SceneMenu::Render(SDL_Renderer *renderer) {
-    int w, h;
-    SDL_RenderGetLogicalSize(renderer, &w, &h);
-    if (w == 0 || h == 0) SDL_GetRendererOutputSize(renderer, &w, &h);
+    for (int i = 0; i < kRaceCount; ++i)
+        buttons[i].style = kRaces[i] == race ? ui::styles::kSelected : ui::styles::kDefault;
+}
 
-    if (background) {
-        SDL_Rect dst = {0, 0, w, h};
-        SDL_RenderCopy(renderer, background, nullptr, &dst);
-    } else {
-        SDL_SetRenderDrawColor(renderer, 20, 20, 40, 255);
-        SDL_RenderClear(renderer);
+void SceneMenu::SelectLevel(int level) {
+    selectedLevel = level;
+    std::cout << "[MENU] Nivel do oponente: " << level << std::endl;
+
+    for (int i = 0; i < kLevelCount; ++i)
+        buttons[kRaceCount + i].style =
+            i + 1 == level ? ui::styles::kSelected : ui::styles::kDefault;
+}
+
+// ── Placar ────────────────────────────────────────────────────────
+
+void SceneMenu::ShowScores() {
+    screen = Screen::SCORES;
+    title = "Melhores Pontuações";
+    hoveredIndex = -1;
+    buttons.clear();
+
+    // Le do disco na hora: a partida que acabou de terminar ja esta no arquivo.
+    scores.Load();
+    std::cout << "[MENU] Placar com " << scores.GetEntries().size() << " pontuação(oes)."
+              << std::endl;
+
+    const int btnW = 200, btnH = 50;
+    buttons.push_back({{(screenWidth - btnW) / 2, screenHeight - 110, btnW, btnH},
+                       "Voltar",
+                       [this] { ShowMainScreen(); }});
+}
+
+void SceneMenu::StartOpponentBattle() {
+    // A escolha vira deckType/deckPart antes do SceneBattle montar o baralho.
+    gameManager.SetOpponentDeck(selectedRace, selectedLevel);
+    std::cout << "[MENU] Oponente: " << translateRace(selectedRace) << " (nivel " << selectedLevel
+              << ")" << std::endl;
+
+    SceneBattle *battle = new SceneBattle(gameManager);
+    battle->Initialize(gameManager.GetRenderer());
+    battle->StartBattle(&gameManager.GetPlayer(), &gameManager.GetOpponent(),
+                        gameManager.GetRenderer());
+    gameManager.ChangeMusic("assets/audio/music/battle_theme.mp3");
+    gameManager.ChangeScene(battle);
+}
+
+// ── Render ────────────────────────────────────────────────────────
+
+void SceneMenu::RenderContent(SDL_Renderer *renderer) {
+    if (screen == Screen::SCORES) {
+        RenderScoreTable(renderer);
+        return;
     }
 
-    if (fontTitle) {
-        const std::string title = "Apex Ascent";
-        int titleW, titleH;
-        TTF_SizeUTF8(fontTitle, title.c_str(), &titleW, &titleH);
-        int titleX = (w - titleW) / 2;
-        int titleY = 50;
-        SDL_Color white = {255, 255, 255, 255};
-        ui::UIRenderUtils::RenderText(renderer, title, titleX, titleY, white, fontTitle);
+    if (screen != Screen::OPPONENT_SETUP) return;
+
+    const SDL_Color white = {255, 255, 255, 255};
+    RenderCenteredText(renderer, font, "Raça do oponente", buttons[0].rect.y - 40, white);
+    RenderCenteredText(renderer, font, "Nível do oponente", buttons[kRaceCount].rect.y - 40, white);
+}
+
+// Sem nome de jogador: cada linha e identificada pela run — contra que raça
+// foi, em que dificuldade, e como ela acabou (vida e cartas restantes).
+void SceneMenu::RenderScoreTable(SDL_Renderer *renderer) const {
+    const SDL_Color white = {255, 255, 255, 255};
+    const auto &entries = scores.GetEntries();
+
+    // Painel escuro: o fundo do menu deixaria a tabela ilegivel.
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 170);
+    SDL_Rect panel = {340, 150, 940, 530};
+    SDL_RenderFillRect(renderer, &panel);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+    SDL_SetRenderDrawColor(renderer, 180, 180, 255, 255);
+    SDL_RenderDrawRect(renderer, &panel);
+
+    if (entries.empty()) {
+        RenderCenteredText(renderer, font, "Nenhuma partida registrada ainda.", 380, white);
+        return;
     }
 
-    for (int i = 0; i < (int)buttons.size(); i++) {
-        ui::UIRenderUtils::RenderButton(renderer, buttons[i].rect, buttons[i].label, font,
-                                        i == hoveredIndex);
+    constexpr int kColX[] = {380, 470, 650, 870, 1070, 1180};
+    constexpr const char *kColLabel[] = {"#", "Pontos", "Raça", "Dificuldade", "Vida", "Cartas"};
+    constexpr int kColCount = 6;
+    constexpr int kRowHeight = 44;
+    constexpr int kTableY = 175;
+
+    for (int col = 0; col < kColCount; ++col)
+        ui::UIRenderUtils::RenderText(renderer, kColLabel[col], kColX[col], kTableY,
+                                      {255, 220, 80, 255}, font);
+
+    for (int row = 0; row < static_cast<int>(entries.size()); ++row) {
+        const ScoreEntry &entry = entries[row];
+        const std::string cells[kColCount] = {
+            std::to_string(row + 1) + "o",     std::to_string(entry.score),
+            translateRace(entry.opponentRace), std::to_string(entry.difficulty),
+            std::to_string(entry.health),      std::to_string(entry.cardsLeft)};
+
+        const int y = kTableY + (row + 1) * kRowHeight;
+        for (int col = 0; col < kColCount; ++col)
+            ui::UIRenderUtils::RenderText(renderer, cells[col], kColX[col], y, white, font);
     }
 }

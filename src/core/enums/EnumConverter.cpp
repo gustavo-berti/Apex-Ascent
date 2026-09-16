@@ -85,6 +85,24 @@ Race StringToRace(const std::string &raceStr) {
     return it != map.end() ? it->second : Race::NONE;
 }
 
+std::string RaceToString(Race race) {
+    switch (race) {
+    case Race::HUMAN:
+        return "HUMAN";
+    case Race::AUTOMAT:
+        return "AUTOMAT";
+    case Race::PIXIE:
+        return "PIXIE";
+    case Race::DRAGON:
+        return "DRAGON";
+    case Race::DRYAD:
+        return "DRYAD";
+    case Race::NONE:
+        return "NONE";
+    }
+    return "NONE";
+}
+
 Rarity StringToRarity(const std::string &rarityType) {
     static const std::unordered_map<std::string, Rarity> map = {{"COMMON", Rarity::COMMON},
                                                                 {"UNCOMMON", Rarity::UNCOMMON},

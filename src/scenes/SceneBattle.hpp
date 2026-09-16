@@ -1,15 +1,21 @@
 #pragma once
 #include "../core/GameWorld.hpp"
 #include "../core/data/CardDatabase.hpp"
+#include "../core/data/ScoreBoard.hpp"
 #include "../logic/Board.hpp"
 #include "../logic/Opponent.hpp"
 #include "../logic/Player.hpp"
 #include "../logic/TurnManager.hpp"
 #include "../objects/cards/Card.hpp"
 #include "../objects/cards/CreatureCard.hpp"
+#include "../objects/ui/UIButton.hpp"
+#include "ScenePause.hpp"
 #include <SDL2/SDL_ttf.h>
+#include <memory>
 #include <string>
 #include <vector>
+
+class GameManager;
 
 enum class BattleOutcome { ONGOING, PLAYER_WIN, PLAYER_LOSE };
 
@@ -49,13 +55,24 @@ class SceneBattle : public GameWorld {
     SDL_Rect playerBattleZone;
     SDL_Rect playerPreparationZone;
     SDL_Rect playerHandZone;
+    SDL_Rect opponentHandZone;
     SDL_Texture *background = nullptr;
+
+    // Mao do oponente: cartas de costas, no tamanho normal, penduradas na
+    // borda de cima com metade da carta fora da tela.
+    SDL_Texture *cardBack = nullptr;
 
     // ── Botões ────────────────────────────────────────────────────
     SDL_Rect btnNextPhase;
     SDL_Rect btnCancel;
+    SDL_Rect btnPause;
+
+    // ── Botões do fim de partida ──────────────────────────────────
+    std::vector<ui::UIButton> outcomeButtons;
+    int outcomeHoveredIndex = -1;
 
     // ── Estado da cena ────────────────────────────────────────────
+    GameManager &gameManager;
     Player *currentState = nullptr;
     Opponent *opponent = nullptr;
     SDL_Renderer *renderer = nullptr;
@@ -64,6 +81,8 @@ class SceneBattle : public GameWorld {
     BattleOutcome outcome = BattleOutcome::ONGOING;
     bool hasRendered = false;
     bool matchStartPending = false;
+    int runScore = 0;     // fechado no fim da partida, mostrado na tela de fim
+    int runCardsLeft = 0; // cartas que sobraram com o jogador
 
     // ── Passos pausados (compras iniciais + turno da IA) ────────────
     ScriptedState scriptedState = ScriptedState::Idle;
@@ -74,6 +93,11 @@ class SceneBattle : public GameWorld {
     size_t aiCardsToPlayIndex = 0;
     std::vector<DefenderAssignment> aiDefensePlan;
     size_t aiDefensePlanIndex = 0;
+
+    // ── Pausa ─────────────────────────────────────────────────────
+    // Enquanto existe, o menu de pausa fica com todo o input e o Update nao
+    // roda: o turno da IA e as compras iniciais param onde estavam.
+    std::unique_ptr<ScenePause> pauseMenu;
 
     // ── Declaração de defensores do jogador ───────────────────────
     Card *pendingDefender = nullptr; // criatura escolhida, esperando o atacante
@@ -126,6 +150,10 @@ class SceneBattle : public GameWorld {
     void HandleConfirmAttack();
     void CheckBattleOutcome(const CombatResult &result);
 
+    // ── Pontuação da run ──────────────────────────────────────────
+    void FinishRun(); // fecha a pontuacao e grava no placar
+    int CountPlayerCardsLeft() const;
+
     // ── Defesa ────────────────────────────────────────────────────
     void BeginDefenderDeclaration();
     void ConfirmDefense();
@@ -136,7 +164,14 @@ class SceneBattle : public GameWorld {
     // ── Helpers de estado ─────────────────────────────────────────
     bool CanPlayCreature() const;
     bool CanPlaySpell() const;
+    bool IsPlayerInputBlocked() const;
     bool IsBattleOver() const { return outcome != BattleOutcome::ONGOING; }
+    bool IsPaused() const { return pauseMenu != nullptr; }
+
+    // ── Pausa ─────────────────────────────────────────────────────
+    void OpenPause();
+    void ClosePause();
+    bool HandlePauseInput(SDL_Event &e); // pode destruir a cena
 
     // ── Input ─────────────────────────────────────────────────────
     bool HandleNextPhaseClick(const SDL_Event &e);
@@ -145,6 +180,12 @@ class SceneBattle : public GameWorld {
     bool HandleBattleCardClick(const SDL_Event &e);
     bool HandleSummonPendingInput(const SDL_Event &e);
     bool HandleDefenseInput(const SDL_Event &e);
+    void HandleOutcomeInput(const SDL_Event &e); // pode destruir a cena
+
+    // ── Fim de partida ────────────────────────────────────────────
+    void BuildOutcomeButtons();
+    void RestartBattle(); // destroi a cena: nada pode rodar depois
+    void ReturnToMenu();  // destroi a cena: nada pode rodar depois
 
     // ── Deck ──────────────────────────────────────────────────────
     bool SetCurrentPlayerState(Player *p);
@@ -153,6 +194,7 @@ class SceneBattle : public GameWorld {
     void BuildDrawPile(Entity *entity);
     void ShuffleDrawPile(Entity* entity);
     void RearrangeHand();
+    void RearrangeOpponentHand();
         BattlePiles& GetPilesFor(Entity* entity) {
         if (entity == currentState) return playerPiles;
         return opponentPiles;
@@ -160,7 +202,9 @@ class SceneBattle : public GameWorld {
 
     // ── Render ────────────────────────────────────────────────────
     void RenderButtons(SDL_Renderer *renderer) const;
+    void RenderPauseButton(SDL_Renderer *renderer) const;
     void RenderHand(SDL_Renderer *renderer) const;
+    void RenderOpponentHand(SDL_Renderer *renderer) const;
     void RenderHUD(SDL_Renderer *renderer) const;
     void RenderMana(SDL_Renderer *renderer) const;
     void RenderHealthBars(SDL_Renderer *renderer) const;
@@ -176,7 +220,7 @@ class SceneBattle : public GameWorld {
                     int y) const;
 
   public:
-    SceneBattle();
+    explicit SceneBattle(GameManager &manager);
     ~SceneBattle() override;
 
     void Initialize(SDL_Renderer *renderer) override;

@@ -3,3 +3,6 @@
 /.vscode
 
 apex_ascent
+
+# Placar local: o jogo cria e atualiza este arquivo a cada partida.
+/assets/data/scores.json
