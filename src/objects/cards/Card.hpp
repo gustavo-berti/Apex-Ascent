@@ -49,4 +49,9 @@ class Card : public DynamicObject {
     int GetId() const { return id; }
     const std::string &GetName() const { return name; }
     int GetManaCost() const { return manaCost; }
+
+    // A textura vem de um cache global (ver UIRenderUtils::LoadTexture) e pode
+    // ser compartilhada por varias cartas com a mesma imagem; so diz se ja foi
+    // carregada, nao transfere posse.
+    bool HasTexture() const { return texture != nullptr; }
 };

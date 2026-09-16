@@ -28,10 +28,9 @@ Card::Card(int id, std::string name, int manaCost, Rarity rarity, std::string im
       imagePath(imagePath) {}
 
 Card::~Card() {
-    if (texture) {
-        SDL_DestroyTexture(texture);
-        texture = nullptr;
-    }
+    // A textura NAO e destruida aqui: ela vem do cache global de UIRenderUtils
+    // e pode estar compartilhada com outras cartas da mesma imagem. O cache e
+    // liberado de uma vez no shutdown (UIRenderUtils::ClearTextureCache).
 }
 
 void Card::Initialize() {}
@@ -63,16 +62,8 @@ void Card::Render(SDL_Renderer *renderer) {
 void Card::LoadTexture(SDL_Renderer *renderer) {
     if (imagePath.empty()) return;
 
-    SDL_Surface *surface = IMG_Load(imagePath.c_str());
-    if (!surface) {
-        std::cerr << "Erro ao carregar imagem: " << imagePath << " — " << IMG_GetError()
-                  << std::endl;
-        return;
-    }
-
-    this->texture = SDL_CreateTextureFromSurface(renderer, surface);
+    this->texture = ui::UIRenderUtils::LoadTexture(renderer, imagePath);
     this->renderer = renderer;
-    SDL_FreeSurface(surface);
 }
 
 void Card::RenderBadge(SDL_Renderer *renderer, int value, int badgeX, int badgeY,

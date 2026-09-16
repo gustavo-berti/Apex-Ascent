@@ -30,8 +30,11 @@ void SceneCollection::Initialize(SDL_Renderer *renderer_) {
     BuildCollection();
     ArrangeGrid();
 
-    for (Card *card : allCards)
-        card->LoadTexture(renderer);
+    // As texturas NAO sao carregadas aqui de proposito: com 50+ imagens de
+    // varios MB cada, carregar tudo de uma vez travava a abertura da tela.
+    // Render() carrega sob demanda, so pra carta que entrar na area visivel
+    // (e o cache de UIRenderUtils garante que isso so acontece uma vez por
+    // imagem em toda a sessao).
 }
 
 void SceneCollection::BuildCollection() {
@@ -185,6 +188,7 @@ void SceneCollection::Render(SDL_Renderer *renderer) {
 
         int originalY = card->GetY();
         card->SetPosition(card->GetX(), drawY);
+        if (!card->HasTexture()) card->LoadTexture(renderer);
         card->Render(renderer);
         RenderSelectionBadge(renderer, card, GetSelectedCount(card->GetId()));
         card->SetPosition(card->GetX(), originalY); // restaura a posição "lógica"
