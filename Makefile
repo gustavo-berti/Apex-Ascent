@@ -20,7 +20,8 @@ SOURCES = ./src/main.cpp ./src/core/GameManager.cpp \
           ./src/logic/Board.cpp ./src/scenes/SceneUI.cpp ./src/scenes/SceneMenu.cpp \
           ./src/scenes/ScenePause.cpp \
           ./src/logic/Player.cpp \
-          ./src/logic/Opponent.cpp
+          ./src/logic/Opponent.cpp ./src/scenes/SceneCollection.cpp \
+          ./src/logic/DeckBuilder.cpp \
 
 OBJECTS = $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(SOURCES))
 DEPENDS = $(OBJECTS:.o=.d)

@@ -1,7 +1,8 @@
 #include "CreatureCard.hpp"
 
 CreatureCard::CreatureCard(const CreatureData *data, int x, int y)
-    : Card(data->name, data->manaCost, data->rarity, data->imagePath, x, y), dataRef(data) {
+    : Card(data->id, data->name, data->manaCost, data->rarity, data->imagePath, x, y),
+      dataRef(data) {
     this->stage = 1;
     this->xpPoints = 0;
 

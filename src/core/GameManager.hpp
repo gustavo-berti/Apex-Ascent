@@ -18,6 +18,12 @@ class GameManager {
     Mix_Music* backgroundMusic;
     static std::unordered_map<std::string, Mix_Chunk*> soundEffects;
 
+    // Selecao de deck feita pelo jogador na tela de Colecao (id da carta ->
+    // quantidade de copias, 0..3). Vive so durante a sessao atual: nao e
+    // salva em disco. DeckBuilder::Build usa isso pra montar o deck real
+    // quando a partida comeca.
+    std::unordered_map<int, int> playerDeckSelection;
+
   public:
     GameManager();
     ~GameManager();
@@ -35,6 +41,7 @@ class GameManager {
     Player &GetPlayer() { return player; }
     Opponent &GetOpponent() { return opponent; }
     void SetOpponentDeck(Race type, int part) { opponent.SetDeck(type, part); }
+    std::unordered_map<int, int> &GetPlayerDeckSelection() { return playerDeckSelection; }
     void ChangeMusic(const std::string &filePath);
     static void LoadSFX(const std::string& name, const std::string& filepath);
     static void PlaySFX(const std::string& name);

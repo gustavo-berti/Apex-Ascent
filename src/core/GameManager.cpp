@@ -1,4 +1,5 @@
 #include "GameManager.hpp"
+#include "../objects/ui/UIRenderUtils.hpp"
 #include "../scenes/SceneMenu.hpp"
 #include <SDL2/SDL_ttf.h>
 #include <iostream>
@@ -204,6 +205,11 @@ void GameManager::Clean() {
         delete currentWorld;
         currentWorld = nullptr;
     }
+
+    // Todas as texturas de carta vem do cache de UIRenderUtils (nao sao mais
+    // donas do proprio Card), entao precisam ser liberadas explicitamente
+    // aqui — e antes do renderer morrer.
+    ui::UIRenderUtils::ClearTextureCache();
 
     if (backgroundMusic != nullptr) {
         Mix_HaltMusic();

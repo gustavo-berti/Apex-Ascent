@@ -15,6 +15,7 @@ struct Color {
 
 class Card : public DynamicObject {
   private:
+    int id;
     std::string name;
     int manaCost;
     std::string description;
@@ -33,7 +34,8 @@ class Card : public DynamicObject {
                      Color bgColor) const;
 
   public:
-    Card(std::string name, int manaCost, Rarity rarity, std::string imagePath, float x, float y);
+    Card(int id, std::string name, int manaCost, Rarity rarity, std::string imagePath, float x,
+        float y);
     virtual ~Card();
 
     virtual void Initialize() override;
@@ -44,6 +46,12 @@ class Card : public DynamicObject {
     void LoadTexture(SDL_Renderer *renderer);
     void SetPosition(float newX, float newY) { pos.set(newX, newY); }
 
+    int GetId() const { return id; }
     const std::string &GetName() const { return name; }
     int GetManaCost() const { return manaCost; }
+
+    // A textura vem de um cache global (ver UIRenderUtils::LoadTexture) e pode
+    // ser compartilhada por varias cartas com a mesma imagem; so diz se ja foi
+    // carregada, nao transfere posse.
+    bool HasTexture() const { return texture != nullptr; }
 };

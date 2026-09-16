@@ -1,7 +1,11 @@
 #include "SceneMenu.hpp"
 #include "../core/GameManager.hpp"
+#include "../core/data/CardDatabase.hpp"
+#include "../logic/DeckBuilder.hpp"
 #include "../objects/ui/UIRenderUtils.hpp"
-#include "SceneBattle.hpp"
+#include "../scenes/SceneBattle.hpp"
+#include "../scenes/SceneCollection.hpp"
+#include <SDL2/SDL_ttf.h>
 #include <iostream>
 
 SceneMenu::SceneMenu(GameManager &manager) : SceneUI(manager) {}
@@ -57,11 +61,14 @@ void SceneMenu::ShowMainScreen() {
                            ShowOpponentSetup();
                        }});
 
-    buttons.push_back({{x, y + gap + btnH, btnW, btnH}, "Coleção",
-                       [] { std::cout << "Coleção clicado" << std::endl; }});
+    buttons.push_back({{x, y + gap + btnH, btnW, btnH}, "Coleção", [this] {
+                           SceneCollection *collection = new SceneCollection(gameManager);
+                           collection->Initialize(gameManager.GetRenderer());
+                           gameManager.ChangeScene(collection); // "this" é destruído aqui dentro
+                       }});
 
-    buttons.push_back({{x, y + (gap + btnH) * 2, btnW, btnH}, "Pontuações",
-                       [this] { ShowScores(); }});
+    buttons.push_back(
+        {{x, y + (gap + btnH) * 2, btnW, btnH}, "Pontuações", [this] { ShowScores(); }});
 
     buttons.push_back({{x, y + (gap + btnH) * 3, btnW, btnH}, "Sair", [] {
                            std::cout << "Sair clicado" << std::endl;
@@ -117,8 +124,9 @@ void SceneMenu::ShowOpponentSetup() {
 
     const int actW = 200, actH = 50, actGap = 40;
     const int actY = screenHeight / 2 + 150;
-    buttons.push_back({{screenWidth / 2 - actW - actGap / 2, actY, actW, actH}, "Lutar",
-                       [this] { StartOpponentBattle(); }});
+    buttons.push_back({{screenWidth / 2 - actW - actGap / 2, actY, actW, actH}, "Lutar", [this] {
+                           StartOpponentBattle();
+                       }});
     buttons.push_back(
         {{screenWidth / 2 + actGap / 2, actY, actW, actH}, "Voltar", [this] { ShowMainScreen(); }});
 }
@@ -156,7 +164,8 @@ void SceneMenu::ShowScores() {
               << std::endl;
 
     const int btnW = 200, btnH = 50;
-    buttons.push_back({{(screenWidth - btnW) / 2, screenHeight - 110, btnW, btnH}, "Voltar",
+    buttons.push_back({{(screenWidth - btnW) / 2, screenHeight - 110, btnW, btnH},
+                       "Voltar",
                        [this] { ShowMainScreen(); }});
 }
 
@@ -177,6 +186,16 @@ void SceneMenu::StartOpponentBattle() {
               << selectedLevel << ")" << std::endl;
 
     SetTextInputActive(false);
+
+    // A selecao feita na Colecao (GameManager::playerDeckSelection) prevalece;
+    // o que faltar pra fechar 30 cartas (parcial ou totalmente) e sorteado aqui.
+    CardDatabase database;
+    if (database.LoadFromJson("assets/data/cards.json")) {
+        gameManager.GetPlayer().masterDeck =
+            DeckBuilder::Build(gameManager.GetPlayerDeckSelection(), database);
+    } else {
+        std::cerr << "Falha ao carregar cards.json para montar o deck." << std::endl;
+    }
 
     SceneBattle *battle = new SceneBattle(gameManager);
     battle->Initialize(gameManager.GetRenderer());
@@ -244,11 +263,10 @@ void SceneMenu::RenderScoreTable(SDL_Renderer *renderer) const {
         // Placar antigo nao tem nome gravado.
         const std::string name = entry.name.empty() ? "-" : entry.name;
         const std::string cells[kColCount] = {
-            std::to_string(row + 1) + "o",     name,
-            std::to_string(entry.score),       translateRace(entry.opponentRace),
-            std::to_string(entry.difficulty),  std::to_string(entry.health),
+            std::to_string(row + 1) + "o",    name,
+            std::to_string(entry.score),      translateRace(entry.opponentRace),
+            std::to_string(entry.difficulty), std::to_string(entry.health),
             std::to_string(entry.cardsLeft)};
-
         const int y = kTableY + (row + 1) * kRowHeight;
         for (int col = 0; col < kColCount; ++col)
             ui::UIRenderUtils::RenderText(renderer, cells[col], kColX[col], y, white, font);
