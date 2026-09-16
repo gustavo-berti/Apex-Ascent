@@ -1,4 +1,5 @@
 #include "UIRenderUtils.hpp"
+#include <SDL2/SDL_image.h>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
@@ -9,6 +10,14 @@ using FontPtr = std::shared_ptr<TTF_Font>;
 
 std::unordered_map<std::string, FontPtr> &GetFontCache() {
     static std::unordered_map<std::string, FontPtr> cache;
+    return cache;
+}
+
+// Textura crua: quem destroi e ClearTextureCache (no shutdown), nunca o dono
+// individual de um Card — varias cartas com a mesma imagem compartilham a
+// mesma textura.
+std::unordered_map<std::string, SDL_Texture *> &GetTextureCache() {
+    static std::unordered_map<std::string, SDL_Texture *> cache;
     return cache;
 }
 
@@ -36,6 +45,37 @@ TTF_Font *UIRenderUtils::LoadFont(const std::string &path, int size) {
 
     cache[key] = FontPtr(rawFont, TTF_CloseFont);
     return cache[key].get();
+}
+
+SDL_Texture *UIRenderUtils::LoadTexture(SDL_Renderer *renderer, const std::string &path) {
+    if (!renderer || path.empty()) return nullptr;
+
+    auto &cache = GetTextureCache();
+    const auto found = cache.find(path);
+    if (found != cache.end()) return found->second;
+
+    SDL_Surface *surface = IMG_Load(path.c_str());
+    if (!surface) {
+        std::cerr << "Erro ao carregar imagem: " << path << " — " << IMG_GetError() << std::endl;
+        return nullptr;
+    }
+
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_FreeSurface(surface);
+
+    if (!texture) {
+        std::cerr << "Erro ao criar textura para '" << path << "': " << SDL_GetError() << std::endl;
+        return nullptr;
+    }
+
+    cache[path] = texture;
+    return texture;
+}
+
+void UIRenderUtils::ClearTextureCache() {
+    for (auto &[path, texture] : GetTextureCache())
+        SDL_DestroyTexture(texture);
+    GetTextureCache().clear();
 }
 
 void UIRenderUtils::RenderText(SDL_Renderer *renderer, const std::string &text, int x, int y,

@@ -1,5 +1,7 @@
 #include "SceneMenu.hpp"
 #include "../core/GameManager.hpp"
+#include "../core/data/CardDatabase.hpp"
+#include "../logic/DeckBuilder.hpp"
 #include "../objects/ui/UIRenderUtils.hpp"
 #include "../scenes/SceneBattle.hpp"
 #include "../scenes/SceneCollection.hpp"
@@ -33,8 +35,10 @@ void SceneMenu::ShowMainScreen() {
                            ShowOpponentSetup();
                        }});
 
-    buttons.push_back({{x, y + gap + btnH, btnW, btnH}, "Coleção", [] {
-                           std::cout << "Coleção clicado" << std::endl;
+    buttons.push_back({{x, y + gap + btnH, btnW, btnH}, "Coleção", [this] {
+                           SceneCollection *collection = new SceneCollection(gameManager);
+                           collection->Initialize(gameManager.GetRenderer());
+                           gameManager.ChangeScene(collection); // "this" é destruído aqui dentro
                        }});
 
     buttons.push_back(
@@ -132,6 +136,16 @@ void SceneMenu::StartOpponentBattle() {
     gameManager.SetOpponentDeck(selectedRace, selectedLevel);
     std::cout << "[MENU] Oponente: " << translateRace(selectedRace) << " (nivel " << selectedLevel
               << ")" << std::endl;
+
+    // A selecao feita na Colecao (GameManager::playerDeckSelection) prevalece;
+    // o que faltar pra fechar 30 cartas (parcial ou totalmente) e sorteado aqui.
+    CardDatabase database;
+    if (database.LoadFromJson("assets/data/cards.json")) {
+        gameManager.GetPlayer().masterDeck =
+            DeckBuilder::Build(gameManager.GetPlayerDeckSelection(), database);
+    } else {
+        std::cerr << "Falha ao carregar cards.json para montar o deck." << std::endl;
+    }
 
     SceneBattle *battle = new SceneBattle(gameManager);
     battle->Initialize(gameManager.GetRenderer());

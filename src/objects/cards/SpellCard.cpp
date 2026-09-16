@@ -1,7 +1,8 @@
 #include "SpellCard.hpp"
 
 SpellCard::SpellCard(const SpellData *data, int x, int y)
-    : Card(data->name, data->manaCost, data->rarity, data->imagePath, x, y), dataRef(data) {}
+    : Card(data->id, data->name, data->manaCost, data->rarity, data->imagePath, x, y),
+      dataRef(data) {}
 
 SpellCard::~SpellCard() {}
 
