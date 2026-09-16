@@ -27,6 +27,7 @@ bool ScoreBoard::Load(const std::string &filepath) {
 
     for (const auto &item : j["scores"]) {
         ScoreEntry entry;
+        entry.name = item.value("name", std::string());
         entry.score = item.value("score", 0);
         entry.opponentRace = StringToRace(item.value("race", std::string("NONE")));
         entry.difficulty = item.value("difficulty", 1);
@@ -47,7 +48,8 @@ bool ScoreBoard::Save(const std::string &filepath) const {
     j["scores"] = json::array();
 
     for (const ScoreEntry &entry : entries) {
-        j["scores"].push_back({{"score", entry.score},
+        j["scores"].push_back({{"name", entry.name},
+                               {"score", entry.score},
                                {"race", RaceToString(entry.opponentRace)},
                                {"difficulty", entry.difficulty},
                                {"health", entry.health},

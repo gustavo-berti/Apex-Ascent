@@ -6,11 +6,35 @@
 
 SceneMenu::SceneMenu(GameManager &manager) : SceneUI(manager) {}
 
+SceneMenu::~SceneMenu() { SetTextInputActive(false); }
+
 void SceneMenu::Initialize(SDL_Renderer *renderer) {
     SceneUI::Initialize(renderer);
     LoadBackground(renderer, "assets/images/start_menu.png");
     title = "Apex Ascent";
+
+    nameField.placeholder = "Digite seu nome";
+    nameField.maxLength = kNameMaxLength;
+
     ShowMainScreen();
+}
+
+// O campo de nome fica com o teclado enquanto estiver em foco; o resto do
+// evento segue para os botoes da tela.
+void SceneMenu::HandleInput(SDL_Event &event) {
+    if (screen == Screen::OPPONENT_SETUP && nameField.HandleEvent(event)) {
+        if (!nameField.Trimmed().empty()) nameMissing = false;
+        return;
+    }
+
+    SceneUI::HandleInput(event);
+}
+
+void SceneMenu::SetTextInputActive(bool active) {
+    if (active)
+        SDL_StartTextInput();
+    else
+        SDL_StopTextInput();
 }
 
 // ── Tela principal ────────────────────────────────────────────────
@@ -20,6 +44,8 @@ void SceneMenu::ShowMainScreen() {
     title = "Apex Ascent";
     hoveredIndex = -1;
     buttons.clear();
+    SetTextInputActive(false);
+    nameField.focused = false;
 
     const int btnW = 200, btnH = 50, gap = 30, margin = 40;
     const int stackHeight = btnH * 4 + gap * 3;
@@ -52,6 +78,16 @@ void SceneMenu::ShowOpponentSetup() {
     screen = Screen::OPPONENT_SETUP;
     hoveredIndex = -1;
     buttons.clear();
+    nameMissing = false;
+
+    // Quem ja jogou uma partida volta com o nome preenchido.
+    const std::string &savedName = gameManager.GetPlayer().name;
+    if (nameField.text.empty() && savedName != Player::kDefaultName) nameField.text = savedName;
+
+    const int nameW = 360, nameH = 50;
+    nameField.rect = {(screenWidth - nameW) / 2, screenHeight / 2 - 270, nameW, nameH};
+    nameField.focused = true; // pronto pra digitar assim que a tela abre
+    SetTextInputActive(true);
 
     const int raceW = 210, raceH = 50, raceGap = 20;
     const int raceRowW = kRaceCount * raceW + (kRaceCount - 1) * raceGap;
@@ -111,6 +147,8 @@ void SceneMenu::ShowScores() {
     title = "Melhores Pontuações";
     hoveredIndex = -1;
     buttons.clear();
+    SetTextInputActive(false);
+    nameField.focused = false;
 
     // Le do disco na hora: a partida que acabou de terminar ja esta no arquivo.
     scores.Load();
@@ -123,10 +161,22 @@ void SceneMenu::ShowScores() {
 }
 
 void SceneMenu::StartOpponentBattle() {
+    // Sem nome nao começa: a partida ja nasce sabendo como vai assinar o placar.
+    const std::string playerName = nameField.Trimmed();
+    if (playerName.empty()) {
+        nameMissing = true;
+        std::cout << "[MENU] Escolha um nome antes de lutar." << std::endl;
+        return;
+    }
+
+    gameManager.GetPlayer().name = playerName;
+
     // A escolha vira deckType/deckPart antes do SceneBattle montar o baralho.
     gameManager.SetOpponentDeck(selectedRace, selectedLevel);
-    std::cout << "[MENU] Oponente: " << translateRace(selectedRace) << " (nivel " << selectedLevel
-              << ")" << std::endl;
+    std::cout << "[MENU] " << playerName << " contra " << translateRace(selectedRace) << " (nivel "
+              << selectedLevel << ")" << std::endl;
+
+    SetTextInputActive(false);
 
     SceneBattle *battle = new SceneBattle(gameManager);
     battle->Initialize(gameManager.GetRenderer());
@@ -147,12 +197,18 @@ void SceneMenu::RenderContent(SDL_Renderer *renderer) {
     if (screen != Screen::OPPONENT_SETUP) return;
 
     const SDL_Color white = {255, 255, 255, 255};
+    RenderCenteredText(renderer, font, "Seu nome", nameField.rect.y - 40, white);
+    ui::RenderTextField(renderer, nameField, font);
     RenderCenteredText(renderer, font, "Raça do oponente", buttons[0].rect.y - 40, white);
     RenderCenteredText(renderer, font, "Nível do oponente", buttons[kRaceCount].rect.y - 40, white);
+
+    if (nameMissing)
+        RenderCenteredText(renderer, font, "Digite um nome para entrar no placar.",
+                           buttons.back().rect.y + 70, {255, 120, 120, 255});
 }
 
-// Sem nome de jogador: cada linha e identificada pela run — contra que raça
-// foi, em que dificuldade, e como ela acabou (vida e cartas restantes).
+// Cada linha e uma partida: quem jogou, quanto fez e como a run acabou (contra
+// que raça, em que dificuldade, com quanta vida e carta sobrando).
 void SceneMenu::RenderScoreTable(SDL_Renderer *renderer) const {
     const SDL_Color white = {255, 255, 255, 255};
     const auto &entries = scores.GetEntries();
@@ -160,7 +216,7 @@ void SceneMenu::RenderScoreTable(SDL_Renderer *renderer) const {
     // Painel escuro: o fundo do menu deixaria a tabela ilegivel.
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 170);
-    SDL_Rect panel = {340, 150, 940, 530};
+    SDL_Rect panel = {300, 150, 1000, 530};
     SDL_RenderFillRect(renderer, &panel);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
     SDL_SetRenderDrawColor(renderer, 180, 180, 255, 255);
@@ -171,9 +227,10 @@ void SceneMenu::RenderScoreTable(SDL_Renderer *renderer) const {
         return;
     }
 
-    constexpr int kColX[] = {380, 470, 650, 870, 1070, 1180};
-    constexpr const char *kColLabel[] = {"#", "Pontos", "Raça", "Dificuldade", "Vida", "Cartas"};
-    constexpr int kColCount = 6;
+    constexpr int kColX[] = {330, 380, 610, 730, 890, 1080, 1180};
+    constexpr const char *kColLabel[] = {"#",           "Nome", "Pontos", "Raça",
+                                         "Dificuldade", "Vida", "Cartas"};
+    constexpr int kColCount = 7;
     constexpr int kRowHeight = 44;
     constexpr int kTableY = 175;
 
@@ -183,10 +240,14 @@ void SceneMenu::RenderScoreTable(SDL_Renderer *renderer) const {
 
     for (int row = 0; row < static_cast<int>(entries.size()); ++row) {
         const ScoreEntry &entry = entries[row];
+
+        // Placar antigo nao tem nome gravado.
+        const std::string name = entry.name.empty() ? "-" : entry.name;
         const std::string cells[kColCount] = {
-            std::to_string(row + 1) + "o",         std::to_string(entry.score),
-            translateRace(entry.opponentRace),     std::to_string(entry.difficulty),
-            std::to_string(entry.health),          std::to_string(entry.cardsLeft)};
+            std::to_string(row + 1) + "o",     name,
+            std::to_string(entry.score),       translateRace(entry.opponentRace),
+            std::to_string(entry.difficulty),  std::to_string(entry.health),
+            std::to_string(entry.cardsLeft)};
 
         const int y = kTableY + (row + 1) * kRowHeight;
         for (int col = 0; col < kColCount; ++col)

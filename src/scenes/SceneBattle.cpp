@@ -222,6 +222,7 @@ void SceneBattle::FinishRun() {
               << difficulty << " = " << runScore << std::endl;
 
     ScoreEntry entry;
+    entry.name = currentState->name.empty() ? Player::kDefaultName : currentState->name;
     entry.score = runScore;
     entry.opponentRace = opponent->deckType;
     entry.difficulty = difficulty;
@@ -1330,7 +1331,7 @@ void SceneBattle::RenderOutcome(SDL_Renderer *renderer) const {
                                       std::to_string(std::max(0, currentState->currentHealth)) +
                                       " vida) x " + std::to_string(difficulty) + " de dificuldade";
 
-        centered("Pontuação: " + std::to_string(runScore), buttonsY - 95,
+        centered(currentState->name + " — Pontuação: " + std::to_string(runScore), buttonsY - 95,
                  SDL_Color{255, 220, 80, 255});
         centered(breakdown, buttonsY - 55, SDL_Color{220, 220, 220, 255});
     }

@@ -4,9 +4,10 @@
 #include <string>
 #include <vector>
 
-// Uma partida encerrada. A lista de melhores nao guarda nome: quem identifica a
-// run e o oponente que ela enfrentou e como ela terminou.
+// Uma partida encerrada: o nome escolhido no menu mais como a run terminou.
+// Placar antigo (gravado antes do nome existir) carrega com o nome vazio.
 struct ScoreEntry {
+    std::string name;
     int score = 0;
     Race opponentRace = Race::NONE;
     int difficulty = 1; // nivel do oponente escolhido no menu (1 a 5)
