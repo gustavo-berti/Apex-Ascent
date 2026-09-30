@@ -12,12 +12,13 @@ SOURCES = ./src/main.cpp ./src/core/GameManager.cpp \
           ./src/objects/cards/Card.cpp ./src/objects/cards/CreatureCard.cpp \
           ./src/objects/cards/SpellCard.cpp \
           ./src/objects/ui/UIRenderUtils.cpp ./src/objects/ui/UIButton.cpp \
+          ./src/objects/ui/UITextField.cpp \
           ./libs/my-lib/src/memory-pool.cpp ./src/core/data/CardDatabase.cpp \
-          ./src/core/data/ScoreBoard.cpp \
+          ./src/core/data/ScoreBoard.cpp ./src/core/data/Credits.cpp \
           ./src/core/parsers/CardParser.cpp ./src/core/enums/EnumConverter.cpp \
           ./src/logic/CardFactory.cpp ./src/scenes/SceneBattle.cpp \
           ./src/logic/Board.cpp ./src/scenes/SceneUI.cpp ./src/scenes/SceneMenu.cpp \
-          ./src/scenes/ScenePause.cpp \
+          ./src/scenes/ScenePause.cpp ./src/scenes/SceneCredits.cpp \
           ./src/logic/Player.cpp \
           ./src/logic/Opponent.cpp ./src/scenes/SceneCollection.cpp \
           ./src/logic/DeckBuilder.cpp \
