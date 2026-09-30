@@ -21,7 +21,7 @@ void ScenePause::ShowMainScreen() {
     buttons.clear();
 
     const int btnW = 320, btnH = 60, gap = 25;
-    const int stackHeight = btnH * 3 + gap * 2;
+    const int stackHeight = btnH * 2 + gap;
     const int x = (screenWidth - btnW) / 2;
     const int y = (screenHeight - stackHeight) / 2;
 
@@ -34,10 +34,7 @@ void ScenePause::ShowMainScreen() {
                        },
                        ui::styles::kPrimary});
 
-    buttons.push_back({{x, y + gap + btnH, btnW, btnH}, "Opções",
-                       [] { std::cout << "[PAUSA] Opções clicado" << std::endl; }});
-
-    buttons.push_back({{x, y + (gap + btnH) * 2, btnW, btnH},
+    buttons.push_back({{x, y + gap + btnH, btnW, btnH},
                        "Voltar ao menu",
                        [this] { ShowExitConfirmation(); },
                        ui::styles::kSecondary});

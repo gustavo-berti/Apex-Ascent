@@ -1,0 +1,25 @@
+{
+  "criadores": [
+    {
+      "nome": "Gustavo Gimenez Berti",
+      "papel": "Programação e game design",
+      "frase": "Deus é bom, diabo não presta e programação é o purgatório.",
+      "foto": "assets/images/credits/gustavo.jpeg"
+    },
+    {
+      "nome": "Luan Gustavo",
+      "papel": "Programação e game design",
+      "frase": "O Futuro é Glorioso.",
+      "foto": "assets/images/credits/luan.jpeg"
+    }
+  ],
+
+  "mencoes_honrosas": [
+    {
+      "nome": "Claude (Anthropic)",
+      "papel": "Programação em dupla",
+      "frase": "Conferi cada ponteiro duas vezes. O deck, vocês montaram.",
+      "foto": "assets/images/credits/claude.png"
+    }
+  ]
+}

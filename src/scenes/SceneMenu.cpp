@@ -5,6 +5,7 @@
 #include "../objects/ui/UIRenderUtils.hpp"
 #include "../scenes/SceneBattle.hpp"
 #include "../scenes/SceneCollection.hpp"
+#include "../scenes/SceneCredits.hpp"
 #include <SDL2/SDL_ttf.h>
 #include <iostream>
 
@@ -52,7 +53,7 @@ void SceneMenu::ShowMainScreen() {
     nameField.focused = false;
 
     const int btnW = 200, btnH = 50, gap = 30, margin = 40;
-    const int stackHeight = btnH * 4 + gap * 3;
+    const int stackHeight = btnH * 5 + gap * 4;
     const int x = screenWidth - margin - btnW;
     const int y = screenHeight - margin - stackHeight;
 
@@ -70,7 +71,13 @@ void SceneMenu::ShowMainScreen() {
     buttons.push_back(
         {{x, y + (gap + btnH) * 2, btnW, btnH}, "Pontuações", [this] { ShowScores(); }});
 
-    buttons.push_back({{x, y + (gap + btnH) * 3, btnW, btnH}, "Sair", [] {
+    buttons.push_back({{x, y + (gap + btnH) * 3, btnW, btnH}, "Créditos", [this] {
+                           SceneCredits *credits = new SceneCredits(gameManager);
+                           credits->Initialize(gameManager.GetRenderer());
+                           gameManager.ChangeScene(credits); // "this" é destruído aqui dentro
+                       }});
+
+    buttons.push_back({{x, y + (gap + btnH) * 4, btnW, btnH}, "Sair", [] {
                            std::cout << "Sair clicado" << std::endl;
                            SDL_Event quit;
                            quit.type = SDL_QUIT;
